@@ -48,7 +48,7 @@ public class CLISession{
                     + ChannelCondition.EOF
                     + ChannelCondition.TIMEOUT;
     
-    class Response {
+    static class Response {
         String err;
         String lastPrompt;
         PatternEntry patternEntry;
@@ -63,7 +63,7 @@ public class CLISession{
         }
     }
     
-    class PatternEntry {
+    static class PatternEntry {
         Pattern pattern;
         String  reply;
         boolean hasMore = false;
@@ -77,27 +77,27 @@ public class CLISession{
         }
     }
     
-    class ExpectInfo {
+    static class ExpectCmd {
         String command;
         int maxPageCount = 1;
         int pageCount = 0;
         List<PatternEntry> patterns;
         boolean record;
 
-        public ExpectInfo(String cmd){
+        public ExpectCmd(String cmd){
             this(cmd,null,null,false);
         }
         
-        public ExpectInfo(String cmd,String expect){
+        public ExpectCmd(String cmd, String expect){
             this(cmd,expect,null,false);
         }
 
-        public ExpectInfo(String cmd,String expect,String reply){
+        public ExpectCmd(String cmd, String expect, String reply){
             this(cmd,expect,reply,false);
         }
 
         
-        public ExpectInfo(String cmd,String expect,String reply, boolean hasMore){
+        public ExpectCmd(String cmd, String expect, String reply, boolean hasMore){
             if(cmd!=null && !cmd.endsWith("\n"))
                 cmd += "\n";
             command = cmd;
@@ -149,6 +149,10 @@ public class CLISession{
             boolean passwordPromptExpected = !passwordUsed;
             
             _logger.log(Level.FINE,_name + " connected");
+
+            ExpectCmd cmd = new ExpectCmd(null,"->");
+            cmd.record = false;
+            cli(cmd);
         }
         catch (Exception ex)
         {
@@ -165,11 +169,12 @@ public class CLISession{
 
     public boolean authTelnet(String loginid,String password){
         // telnet authentication
-        List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
-        expectList.add(new ExpectInfo(null,"login:",loginid));
-        expectList.add(new ExpectInfo(null,"password:",password));
+        List<ExpectCmd> expectList = new ArrayList<ExpectCmd>();
+        expectList.add(new ExpectCmd(null,"login:",loginid));
+        expectList.add(new ExpectCmd(null,"password:",password));
         // TODO process errors
-        runExpects(expectList);
+        String results = cli(expectList);
+        
         return true;
     }
     
@@ -322,13 +327,28 @@ public class CLISession{
     public OutputStream getOutputStream() {
         return  tc !=null ? tc.getOutputStream() : _session.getStdin();
     }
+
+    public String cli(String cmd){
+        ExpectCmd expectCmd = new ExpectCmd(cmd);
+        expectCmd.record = true;
+        expectCmd.addPattern("->",null,false);
+      //  expectCmd.addPattern("to quit:"," ",true);
+       // expectCmd.addPattern(" #$",null,false);
+        return cli(expectCmd);
+    }
     
+    public String cli(ExpectCmd cmd){
+        // telnet authentication
+        List<ExpectCmd> expectList = new ArrayList<ExpectCmd>();
+        expectList.add(cmd);
+        return cli(expectList);
+    }
     
     public void testXOSExpect(){
         // telnet authentication
-        List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
+        List<ExpectCmd> expectList = new ArrayList<ExpectCmd>();
         
-        ExpectInfo cmd = new ExpectInfo("show system");
+        ExpectCmd cmd = new ExpectCmd("show system");
         cmd.record = true;
         cmd.addPattern("to quit:"," ",true);
         cmd.addPattern(" #$",null,false);
@@ -339,16 +359,16 @@ public class CLISession{
 //        file (primary.cfg) and reboot?
 //        (y - save and reboot, n - reboot without save, <cr> - cancel command)
 
-        runExpects(expectList);
+        cli(expectList);
     }
 
     public void testEOSExpect(){
-        List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
-        ExpectInfo cmd = new ExpectInfo(null,"->");
+        List<ExpectCmd> expectList = new ArrayList<ExpectCmd>();
+        ExpectCmd cmd = new ExpectCmd(null,"->");
         cmd.record = false;
         expectList.add(cmd);
         
-        cmd = new ExpectInfo("show system");
+        cmd = new ExpectCmd("show system");
         cmd.record = true;
         cmd.addPattern("->",null,false);
         expectList.add(cmd);
@@ -358,14 +378,14 @@ public class CLISession{
 //        file (primary.cfg) and reboot?
 //        (y - save and reboot, n - reboot without save, <cr> - cancel command)
 
-        runExpects(expectList);
+        System.out.println(cli(expectList));
     }
 
 
-    public void runExpects(List<ExpectInfo> expects){
+    public String cli(List<ExpectCmd> expects){
     
         StringBuilder stringBuilder = new StringBuilder();
-        for(ExpectInfo info: expects){
+        for(ExpectCmd info: expects){
             //System.out.println("Processing: "+info);
             Response resp = expect(info);
             if(resp.output!=null)
@@ -375,11 +395,10 @@ public class CLISession{
                 break;
             }
         }
-
-        System.out.print("RESPONSE:\n"+stringBuilder.toString());
+        return stringBuilder.toString();
     }
 
-    public boolean sendCommand(String cmd){
+    protected boolean sendCommand(String cmd){
         boolean sent = false;
         try {
           //  System.out.println("Sending: "+cmd);
@@ -404,7 +423,7 @@ public class CLISession{
     }
    
 
-    public Response expect(ExpectInfo expectInfo) {
+    private Response expect(ExpectCmd expectInfo) {
 
          Response response = new Response();
          InputStream instr = getInputStream();
@@ -534,10 +553,11 @@ public class CLISession{
     public static void main(String[] args) {
        CLISession test = new CLISession();
         try {
-            test.telnet("10.54.147.249","admin","n7830466");
-            test.testXOSExpect();
-//            test.ssh("10.56.0.10",22,"engineer","engineer");
-//            test.testEOSExpect();
+//            test.telnet("10.54.147.249","admin","n7830466");
+//            test.cli("show system");
+            //test.testXOSExpect();
+            test.ssh("10.56.0.10",22,"engineer","engineer");
+            System.out.println(test.cli("show system"));
         } catch (Exception e) {
             e.printStackTrace();
         }
