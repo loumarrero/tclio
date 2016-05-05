@@ -1,0 +1,125 @@
+ <!--  See DeviceType.java for vendor and family constants -->
+ <!--
+ Rules:
+ 1. $ERROR error pattern is replaced by default error pattern.
+ 2. If defining a rule for a command, include error patter as well, even if it is default.
+ <errors>
+       <messagePattern>$ERROR</messagePattern>
+ </errors>
+3. Following two are equal:
+<saveConfigCommand>save\r\nyes</saveConfigCommand>
+
+and
+
+saveConfigCommand>save</saveConfigCommand>
+<CommandProperty command="save">
+       <defaultPrompt>
+         <prompt>Do you want.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <errors>
+       <messagePattern>$ERROR</messagePattern>
+      </errors>
+       <timeout>130000</timeout>
+       <shellPrompt/>
+</CommandProperty>
+
+in second option you can specify other command properties (like timeout in this case).
+4. All timeout settings are in seconds (mot in millsecs).
+
+-->
+<commandRules>
+  <vendor name="Extreme">
+   <family value=".*">
+    <saveConfigCommand>save</saveConfigCommand>
+     <!--  enable ssh2 -->
+     <CommandProperty command="(?i)en.... ss...*">
+       <defaultPrompt>
+         <prompt>.*Continue?.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <shellPrompt/>
+     </CommandProperty>
+     <CommandProperty command="save\s*.*">
+       <defaultPrompt>
+         <prompt>Are you.*\?.*</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>Do you want.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>.*overwrite it.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>Downloaded configuration will be lost.*</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>Remove .*\?.*</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>(?i).*\(y/N\)$</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <errors>
+       <messagePattern>$ERROR</messagePattern>
+      </errors>
+       <shellPrompt/>
+     </CommandProperty>
+     <CommandProperty command="(?i)up.*\s+c.*\s+.*">
+       <errors>
+       <messagePattern>failed|$ERROR</messagePattern>
+      </errors>
+       <shellPrompt/>
+     </CommandProperty>
+
+     <CommandProperty command="(?i)do.*\s+i.*\s+.*">
+       <errors>
+       <messagePattern>Service contract expired|$ERROR</messagePattern>
+      </errors>
+       <defaultPrompt>
+         <prompt>.*remove existing core dumps?.*\?</prompt>
+         <response>y</response>
+         <prompt>.*a reboot required.\s+Do you want.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <shellPrompt/>
+     </CommandProperty>
+
+     <CommandProperty command="(?i)REBOOT">
+       <errors>
+       <messagePattern>$ERROR</messagePattern>
+      </errors>
+       <defaultPrompt>
+         <prompt>.*Are you sure.*\?</prompt>
+         <response>y</response>
+       </defaultPrompt>
+       <defaultPrompt>
+         <prompt>.*Do you want to save configuration.*\?</prompt>
+         <response>n</response>
+       </defaultPrompt>
+       <shellPrompt/>
+     </CommandProperty>
+
+     <CommandProperty command=".*">
+      <errors>
+       <messagePattern>$ERROR</messagePattern>
+      </errors>
+     </CommandProperty>
+    </family>
+   </vendor>
+   <vendor name="*">
+   <family value=".*">
+   <saveConfigCommand>save\r\nyes</saveConfigCommand>
+     <CommandProperty command=".*">
+      <errors>
+       <messagePattern>$ERROR</messagePattern>
+      </errors>
+     </CommandProperty>
+   </family>
+ </vendor>
+ </commandRules>

@@ -1,0 +1,192 @@
+<script name="Wireless WLAN scheduler">
+  <comments>Wireless: WLAN disable/enable schedule</comments>
+  <category>,Provisioning,</category>
+  <defaultCategory></defaultCategory>
+  <content># @MetaDataStart
+# @DetailDescriptionStart
+######################################################################################
+# Extreme Networks (R) System Engineering CLI Scripting Library
+#
+# scripting.Script : Wireless WLAN Disable/Enable scripting.Script 
+#
+# Revision : 0.1
+# Please feedback to yostrovs@extremenetworks.com
+# Last Update : Sep, 2015
+#
+#######################################################################################
+# @DetailDescriptionEnd
+#######################################################################################
+#
+# @SectionStart (description = &quot;Enter WLAN name and Status here&quot; )
+#
+# @VariableFieldLabel (description = &quot;Status&quot;
+# type = String,validValues=[disable, enable]
+# scope = global,
+#)
+set var WSTATUS disable
+
+# @VariableFieldLabel (description = &quot;WLAN1 name&quot;
+# type = String,
+# scope = global,
+# required = no,
+# readonly = no,
+#)
+set var WLAN1 
+
+# @VariableFieldLabel (description = &quot;WLAN2 name&quot;
+# type = String,
+# scope = global,
+# required = no,
+# readonly = no,
+#)
+set var WLAN2
+
+# @VariableFieldLabel (description = &quot;WLAN3 name&quot;
+# type = String,
+# scope = global,
+# required = no,
+# readonly = no,
+#)
+set var WLAN3
+
+# @VariableFieldLabel (description = &quot;WLAN4 name&quot;
+# type = String,
+# scope = global,
+# required = no,
+# readonly = no,
+#)
+set var WLAN4
+
+# @VariableFieldLabel (description = &quot;WLAN5 name&quot;
+# type = String,
+# scope = global,
+# required = no,
+# readonly = no,
+#)
+set var WLAN5
+
+
+# @MetaDataEnd
+
+configure CLI mode scripting ignore-error
+
+CLI show wlans
+     regexp  &quot;.*${WLAN1}.*&quot; ${CLI.OUT} isWLAN1exist
+         IF ([info exists isWLAN1exist]) THEN
+         set var W1 1
+         ELSE
+         set var W1 0
+         ENDIF
+         
+     regexp  &quot;.*${WLAN2}.*&quot; ${CLI.OUT} isWLAN2exist
+         IF ([info exists isWLAN2exist]) THEN
+         set var W2 1
+         ELSE
+         set var W2 0
+         ENDIF
+
+	regexp  &quot;.*${WLAN3}.*&quot; ${CLI.OUT} isWLAN3exist
+         IF ([info exists isWLAN3exist]) THEN
+         set var W3 1
+         ELSE
+         set var W3 0
+         ENDIF
+         
+    regexp  &quot;.*${WLAN4}.*&quot; ${CLI.OUT} isWLAN4exist
+         IF ([info exists isWLAN4exist]) THEN
+         set var W4 1
+         ELSE
+         set var W4 0
+         ENDIF
+         
+    regexp  &quot;.*${WLAN5}.*&quot; ${CLI.OUT} isWLAN5exist
+         IF ([info exists isWLAN5exist]) THEN
+         set var W5 1
+         ELSE
+         set var W5 0
+         ENDIF
+
+##############################################################
+IF ([string length $WLAN1]==0 || $W1==0) THEN
+  puts &quot;	*********NO WLAN1 $WLAN1 to ${WSTATUS}*********&quot;
+  ELSE
+		CLI wlans
+    		CLI \&quot;$WLAN1\&quot;
+        	CLI status $WSTATUS  
+            CLI show
+            CLI apply
+        	CLI exit
+    	  CLI exit
+          CLI end
+		puts &quot;		$WLAN1 ${WSTATUS}d&quot;
+ENDIF
+
+
+         
+IF ([string length $WLAN2]==0 || $W2==0) THEN
+  puts &quot;	*********NO WLAN2 $WLAN2 to ${WSTATUS}*********&quot;
+  ELSE 
+		CLI wlans
+    		CLI \&quot;$WLAN2\&quot;
+        	CLI status $WSTATUS 
+        	CLI apply
+        	CLI exit
+    	  CLI exit
+          CLI end
+		puts &quot;		$WLAN2 ${WSTATUS}d&quot;
+ENDIF
+
+IF ([string length $WLAN3]==0 || $W3==0) THEN
+  puts &quot;	*********NO WLAN3 $WLAN3 to ${WSTATUS}*********&quot;
+  ELSE 
+		CLI wlans
+    		CLI \&quot;$WLAN3\&quot;
+        	CLI status $WSTATUS 
+        	CLI apply
+        	CLI exit
+    	  CLI exit
+          CLI end
+		puts &quot;		$WLAN3 ${WSTATUS}d&quot;
+ENDIF
+
+
+IF ([string length $WLAN4]==0 || $W4==0) THEN
+  puts &quot;	*********NO WLAN4 $WLAN4 to ${WSTATUS}*********&quot;
+  ELSE 
+		CLI wlans
+    		CLI \&quot;$WLAN4\&quot;
+        	CLI status $WSTATUS 
+        	CLI apply
+        	CLI exit
+    	  CLI exit
+          CLI end
+		puts &quot;		$WLAN4 ${WSTATUS}d&quot;
+ENDIF
+
+
+IF ([string length $WLAN5]==0 || $W5==0) THEN
+  puts &quot;	*********NO WLAN5 $WLAN5 to ${WSTATUS}*********&quot;
+  ELSE 
+		CLI wlans
+    		CLI \&quot;$WLAN5\&quot;
+        	CLI status $WSTATUS 
+        	CLI apply
+        	CLI exit
+    	  CLI exit
+          CLI end
+		puts &quot;		$WLAN5 ${WSTATUS}d&quot;
+ENDIF
+</content>
+  <creator>root</creator>
+  <creationDate>1442432289347</creationDate>
+  <contexts>,Device,</contexts>
+  <supprotedGroups></supprotedGroups>
+  <roles>,NetSight Administrator,</roles>
+  <saveConfigOnExit>false</saveConfigOnExit>
+  <menuScope>NONE</menuScope>
+  <scriptTimeout>60</scriptTimeout>
+  <miscXMLData></miscXMLData>
+  <rollbackScript></rollbackScript>
+  <postprocessScript></postprocessScript>
+  <scriptOwner></scriptOwner>
+</script>

@@ -1,0 +1,116 @@
+<script name="Wireless DCS Scheduler">
+  <comments>Wireless Dynamic Channel Selection scheduler</comments>
+  <category>,Provisioning,</category>
+  <defaultCategory></defaultCategory>
+  <content># @MetaDataStart
+# @DetailDescriptionStart
+######################################################################################
+# Extreme Networks (R) System Engineering CLI Scripting Library
+#
+# scripting.Script : Wireless Dynamic Channel Selection Enable/Disable 
+#
+# Revision : 0.1
+# Please feedback to yostrovs@extremenetworks.com
+# Last Update : Sep, 2015
+#
+#######################################################################################
+# @DetailDescriptionEnd
+#######################################################################################
+# 
+# @SectionStart (description = &quot;Dynamic Channel Selection&quot; )
+#
+# @VariableFieldLabel (description = &quot;Status&quot;
+# type = String,validValues=[off, monitor, active]
+# scope = global,
+#)
+set var DCSSTATUS monitor
+
+# @VariableFieldLabel (description = &quot;Radio&quot;
+# type = String,validValues=[Radio1, Radio2, Both]
+# scope = global,
+#)
+set var RadioX Both
+
+# @SectionStart (description = &quot;*DCS can be OFF only in pre-V10 wireless controller software&quot;)
+
+
+# @MetaDataEnd
+############################################################################################
+configure cli mode scripting ignore-error
+proc multiEditR1 {DCSSTATUS serial} {
+
+global abort_on_error 1
+	CLI ap
+    	CLI $serial
+        	CLI radio1
+        		CLI dcs 
+        			CLI mode $DCSSTATUS
+        			CLI apply
+        		CLI exit
+    CLI end    
+ 	
+}
+
+proc multiEditR2 {DCSSTATUS serial} {
+
+global abort_on_error 1
+	CLI ap
+    	CLI $serial
+        	CLI radio2
+        		CLI dcs 
+        			CLI mode $DCSSTATUS
+        			CLI apply
+        			CLI exit
+      CLI end    
+        	
+}
+
+
+
+# Splitting the AP list in different lines
+# And finding it&apos;s Serial numbers 
+
+
+CLI show ap
+set content $CLI_OUT
+set records [split $content &quot;\n&quot;]
+foreach line $records {
+
+set serial [lindex $line 1]
+
+ IF ($serial == &quot;&quot;) THEN
+ puts &quot;											&quot;
+ puts &quot;**********COMPLETE***********************&quot;
+ puts &quot;**********NO MORE ACCESS POINTS**********&quot;
+ puts &quot;											&quot;
+ ELSE
+
+	IF ($RadioX == &quot;Radio1&quot;) THEN
+    	multiEditR1 $DCSSTATUS $serial
+    ENDIF
+    
+    IF ($RadioX == &quot;Radio2&quot;) THEN
+    	multiEditR2 $DCSSTATUS $serial
+    ENDIF
+
+	IF ($RadioX == &quot;Both&quot;) THEN
+    	multiEditR1 $DCSSTATUS $serial
+        multiEditR2 $DCSSTATUS $serial
+    ENDIF
+  ENDIF
+					}
+
+</content>
+  <creator>root</creator>
+  <creationDate>1442516851554</creationDate>
+  <contexts>,Device,</contexts>
+  <supprotedGroups></supprotedGroups>
+  <roles>,NetSight Administrator,</roles>
+  <saveConfigOnExit>false</saveConfigOnExit>
+  <menuScope>NONE</menuScope>
+  <scriptTimeout>60</scriptTimeout>
+  <miscXMLData></miscXMLData>
+  <rollbackScript></rollbackScript>
+  <postprocessScript></postprocessScript>
+  <scriptOwner></scriptOwner>
+</script>

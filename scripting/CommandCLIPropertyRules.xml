@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!DOCTYPE digester-rules PUBLIC "-//Apache Commons //DTD digester-rules XML V1.0//EN" "http://commons.apache.org/digester/dtds/digester-rules-3.0.dtd">
+<digester-rules>
+
+  <pattern value="commandRules/vendor">
+      <object-create-rule
+        classname="scripting.VendorRules"/>
+      <set-properties-rule>
+            <alias attr-name="name" prop-name="name"/>
+         </set-properties-rule>
+         <set-next-rule methodname="add"
+                      paramtype="java.lang.Object"/>
+
+   </pattern>
+
+   <pattern value="commandRules/vendor/family">
+      <object-create-rule classname="scripting.FamilyRule" />
+      <set-properties-rule>
+            <alias attr-name="value" prop-name="value"/>
+         </set-properties-rule>
+         <bean-property-setter-rule pattern="saveConfigCommand"/>
+      <set-top-rule methodname="setParent" />
+      <set-next-rule methodname="addFamilyRule" />
+   </pattern>
+
+   <pattern value="commandRules/vendor/family/CommandProperty">
+       <object-create-rule
+        classname="scripting.CommandProperty"/>
+
+      <set-properties-rule>
+            <alias attr-name="command" prop-name="command"/>
+         </set-properties-rule>
+      <bean-property-setter-rule pattern="versionRange"/>
+      <call-method-rule pattern="isPasswordCommand" methodname="setPasswordCommand" paramcount="0"/>
+      <bean-property-setter-rule pattern="timeout"/>
+      <bean-property-setter-rule pattern="shellPrompt"/>
+      <call-method-rule pattern="errors/messagePattern" methodname="addErrorPattern" paramcount="0" />
+      <set-top-rule methodname="setParent" />
+      <set-next-rule methodname="addCommandProperty" />
+  </pattern>
+
+  <pattern value="commandRules/vendor/family/CommandProperty/defaultPrompt">
+    <object-create-rule
+        classname="scripting.DefaultPrompt"/>
+       <bean-property-setter-rule pattern="prompt"/>
+      <bean-property-setter-rule pattern="response"/>
+      <set-top-rule methodname="setParent" />
+      <set-next-rule methodname="addDefaultPrompts" />
+  </pattern>
+
+</digester-rules>

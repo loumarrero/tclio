@@ -1,0 +1,329 @@
+<!--
+  SyntaxConversionRules.xml
+  Rules for converting commands into tcl commands.
+-->
+
+<ConversionRule>
+   <SourceMapping id="1">
+     <xossyntaxexpr>(.*)\$CLI.OUT(.*)</xossyntaxexpr>
+     <tclexpr>$1\${CLI.OUT}$2</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+   <SourceMapping id="2">
+     <xossyntaxexpr>(?i)(.*)\$TCL\s*\(\s*(.*?)\)(.*)</xossyntaxexpr>
+     <tclexpr>$1[$2] $3</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+<!--  convet ${foo) to ${foo} -->
+   <SourceMapping id="7">
+     <xossyntaxexpr>(.*)\$\((.*?)\)(.*)</xossyntaxexpr>
+     <tclexpr>$1\${$2}$3</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+   <SourceMapping id="3">
+     <xossyntaxexpr>(?i)(.*)\$UPPERCASE\s*\(\s*(.*?)\)(.*)</xossyntaxexpr>
+     <tclexpr>$1[string toupper $2] $3</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+  <SourceMapping id="4">
+     <xossyntaxexpr>(?i)(.*)\$MATCH\s*\(\s*(.*?),(.*?)\)(.*)</xossyntaxexpr>
+     <tclexpr>$1[string compare $2 $3] $4</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+   <SourceMapping id="41">
+     <xossyntaxexpr>(.*)\$VAREXISTS\s*\(\s*(.*?)\)(.*)</xossyntaxexpr>
+     <tclexpr>$1[info exists $2] $3</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+   <SourceMapping id="5">
+     <xossyntaxexpr>^\s*$</xossyntaxexpr>
+     <tclexpr></tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="6">
+     <xossyntaxexpr>(?i)^&lt;cr&gt;$</xossyntaxexpr>
+     <tclexpr>CLI \\r</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint>continue</hint>
+   </SourceMapping>
+
+
+
+  <SourceMapping id="10">
+     <xossyntaxexpr>^\s*#.*$</xossyntaxexpr>
+     <tclexpr>$0</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </SourceMapping>
+
+  <SourceMapping id="11">
+     <xossyntaxexpr>(?i)^\s*configure cli mode scripting abort-on-error</xossyntaxexpr>
+     <tclexpr>set abort_on_error 1</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </SourceMapping>
+
+  <SourceMapping id="11">
+     <xossyntaxexpr>(?i)^\s*configure cli mode scripting ignore-error</xossyntaxexpr>
+     <tclexpr>set abort_on_error 0</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="20">
+     <xossyntaxexpr>(?i)\s*IF\s+\((.*)\)\s*THEN\s*</xossyntaxexpr>
+     <tclexpr>if { $1 } {</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </SourceMapping>
+
+   <!--  disallow tcl if. only xos scripting if syntax allowed
+   <scripting.SourceMapping id="21">
+     <xossyntaxexpr>(?i)^\s*(IF\s+.*)</xossyntaxexpr>
+     <tclexpr>CLI $1</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </scripting.SourceMapping>
+   -->
+
+   <SourceMapping id="30">
+        <xossyntaxexpr>(?i)^\s*ELSE\s*</xossyntaxexpr>
+        <tclexpr>} else {</tclexpr>
+        <since>7.0</since>since>
+        <casesensitive>false</casesensitive>
+        <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="40">
+           <xossyntaxexpr>(?i)^\s*ENDIF\s*$</xossyntaxexpr>
+           <tclexpr>}</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="50">
+           <xossyntaxexpr>(?i)(?x)WHILE\s*\((.*)\)\s*DO\s*</xossyntaxexpr>
+           <tclexpr>while { $1 } {</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="60">
+           <xossyntaxexpr>(?i)^\s*ENDWHILE\s*$</xossyntaxexpr>
+           <tclexpr>}</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+    <SourceMapping id="70">
+           <xossyntaxexpr>(?i)^\s*SET\s+VAR\s*(.*)?\s+\((\s*.*\s*)\)\s*$</xossyntaxexpr>
+           <tclexpr>set $1 [expr ($2)]</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint>set</hint>
+   </SourceMapping>
+
+   <SourceMapping id="71">
+           <xossyntaxexpr>(?i)^\s*SET\s+VAR(\s*.*\s*)</xossyntaxexpr>
+           <tclexpr>set$1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint>set</hint>
+   </SourceMapping>
+
+   <SourceMapping id="72">
+           <xossyntaxexpr>(?i)^\s*DELETE\s+VAR(\s*.*\s*)</xossyntaxexpr>
+           <tclexpr>unset$1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint>set</hint>
+   </SourceMapping>
+
+   <!--  only allow xos scripting set syntax
+   <scripting.SourceMapping id="71">
+           <xossyntaxexpr>(?i)^\s*(SET\s+.*)$</xossyntaxexpr>
+           <tclexpr>CLI $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+   -->
+
+   <SourceMapping id="74">
+           <xossyntaxexpr>(?i)^\s*CLI (\s*.*\s*)$</xossyntaxexpr>
+           <tclexpr>CLI $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="75">
+           <xossyntaxexpr>(?i)^\s*CLINoWait (\s*.*\s*)$</xossyntaxexpr>
+           <tclexpr>CLINoWait $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+  <SourceMapping id="81">
+           <xossyntaxexpr>(?i)^\s*puts (.*)\s*$</xossyntaxexpr>
+           <tclexpr>ECHO $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+  </SourceMapping>
+
+<!--  tcl open command is not suppoted (hidden) for security reasons.
+Since this command is needed by runscript implementation (echo command), we cannot hide it from
+Interp instance.
+-->
+<SourceMapping id="82">
+           <xossyntaxexpr>(?i)^\s*open (.*)\s*$</xossyntaxexpr>
+           <tclexpr>CLI open $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+  </SourceMapping>
+
+   <SourceMapping id="83">
+           <xossyntaxexpr>(?i)\s*show var\s*(.*?)\s*$</xossyntaxexpr>
+           <tclexpr>ECHO \${$1}</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="84">
+        <xossyntaxexpr>(?i)^\s*}\s*$</xossyntaxexpr>
+        <tclexpr>}</tclexpr>
+        <since>7.0</since>since>
+        <casesensitive>false</casesensitive>
+        <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="85">
+        <xossyntaxexpr>^\s*\}\s*else\s*\{.*$</xossyntaxexpr>
+        <tclexpr>$0</tclexpr>
+        <since>7.0</since>since>
+        <casesensitive>false</casesensitive>
+        <hint/>
+   </SourceMapping>
+
+  <SourceMapping id="86">
+           <xossyntaxexpr>^\s*proc \s*(.*?)\s+(.*)$</xossyntaxexpr>
+           <tclexpr>$0</tclexpr>
+           <since>7.1</since>since>
+           <casesensitive>false</casesensitive>
+           <hint>proc</hint>
+   </SourceMapping>
+
+   <SourceMapping id="87">
+        <xossyntaxexpr>(?i)^\s*yes\s*$</xossyntaxexpr>
+        <tclexpr>CLI yes</tclexpr>
+        <since>7.1</since>since>
+        <casesensitive>false</casesensitive>
+        <hint/>
+   </SourceMapping>
+
+   <SourceMapping id="88">
+        <xossyntaxexpr>(?i)^\s*no\s*$</xossyntaxexpr>
+        <tclexpr>CLI no</tclexpr>
+        <since>7.1</since>since>
+        <casesensitive>false</casesensitive>
+        <hint/>
+  </SourceMapping>
+
+
+  <!--  <scripting.SourceMapping id="90">
+           <xossyntaxexpr>^\s*(.*)\s*$</xossyntaxexpr>
+           <tclexpr>CLI $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+
+   <scripting.SourceMapping id="72">
+           <xossyntaxexpr>(?i)^\s*printSystemVariables\s*$</xossyntaxexpr>
+           <tclexpr>printSystemVariables</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+
+   <scripting.SourceMapping id="73">
+           <xossyntaxexpr>(?i)^\s*sleep\s+(.*\s*)$</xossyntaxexpr>
+           <tclexpr>sleep $1</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+   scripting.SourceMapping id="81">
+           <xossyntaxexpr>(?i)^\s*puts(.*)\s*$</xossyntaxexpr>
+           <tclexpr>puts \$epic_responseFileId$1;flush \$epic_responseFileId</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+ </scripting.SourceMapping>
+ <scripting.SourceMapping id="80">
+           <xossyntaxexpr>(?i)\s*show var\s*(.*\s*$)</xossyntaxexpr>
+           <tclexpr>puts \${$1}</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+   <scripting.SourceMapping id="70">
+           <xossyntaxexpr>(?i)\s*SET VAR(\s*(.*)\$TCL\s*\(\s*(.*)\)\s*)</xossyntaxexpr>
+           <tclexpr>set $2 $3</tclexpr>
+           <since>7.0</since>since>
+           <casesensitive>false</casesensitive>
+           <hint/>
+   </scripting.SourceMapping>
+   <scripting.SourceMapping id="21">
+     <xossyntaxexpr>(?x)IF\s*\(?(.*)\)?\s*THEN\s*</xossyntaxexpr>
+     <tclexpr>if { $1 } {</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </scripting.SourceMapping>
+
+   <scripting.SourceMapping id="20">
+     <xossyntaxexpr>(?i)(?x)IF\s*\(\s*\$MATCH\s*\((.*)\)\)\s*THEN\s*</xossyntaxexpr>
+     <tclexpr>if { string compare $1 } {</tclexpr>
+     <since>7.0</since>since>
+     <casesensitive>false</casesensitive>
+     <hint/>
+   </scripting.SourceMapping>
+
+  -->
+
+
+</ConversionRule>

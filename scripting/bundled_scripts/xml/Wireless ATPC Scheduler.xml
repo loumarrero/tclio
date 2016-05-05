@@ -1,0 +1,121 @@
+<script name="Wireless ATPC Scheduler">
+  <comments>Wireless Auto Power Control Scheduler</comments>
+  <category>,Provisioning,</category>
+  <defaultCategory></defaultCategory>
+  <content># @MetaDataStart
+# @DetailDescriptionStart
+######################################################################################
+# Extreme Networks (R) System Engineering CLI Scripting Library
+#
+# scripting.Script : Wireless Automatic Transmit Power Control 
+#
+# Revision : 0.1
+# Please feedback to yostrovs@extremenetworks.com
+# Last Update : DEC, 2015
+#
+#######################################################################################
+# @DetailDescriptionEnd
+#######################################################################################
+# 
+# @SectionStart (description = &quot;Automatic Transmit Power Control (ATPC)&quot; )
+#
+# @VariableFieldLabel (description = &quot;Status&quot;
+# type = String,validValues=[off, on]
+# scope = global,
+#)
+set var ATPCSTATUS off
+
+# @VariableFieldLabel (description = &quot;Radio&quot;
+# type = String,validValues=[Radio1, Radio2, Both]
+# scope = global,
+#)
+set var RadioX Both
+
+
+
+# @MetaDataEnd
+############################################################################################
+configure cli mode scripting ignore-error
+proc multiEditR1 {ATPCSTATUS serial} {
+
+global abort_on_error 1
+	CLI ap
+    	CLI $serial
+        	CLI radio1
+          IF ($ATPCSTATUS == &quot;on&quot;) THEN
+        	CLI atpc
+          ELSE
+          	CLI no atpc
+          ENDIF
+        	CLI apply
+        		CLI exit
+    CLI end    
+ 	
+}
+
+proc multiEditR2 {ATPCSTATUS serial} {
+
+global abort_on_error 1
+	CLI ap
+    	CLI $serial
+        	CLI radio2
+          IF ($ATPCSTATUS == &quot;on&quot;) THEN
+        	CLI atpc
+          ELSE
+          	CLI no atpc
+          ENDIF
+
+        			CLI apply
+        			CLI exit
+      CLI end    
+        	
+}
+
+
+
+# Splitting the AP list in different lines
+# And finding it&apos;s Serial numbers 
+
+
+CLI show ap
+set content $CLI_OUT
+set records [split $content &quot;\n&quot;]
+foreach line $records {
+
+set serial [lindex $line 1]
+
+ IF ($serial == &quot;&quot;) THEN
+ puts &quot;											&quot;
+ puts &quot;**********COMPLETE***********************&quot;
+ puts &quot;**********NO MORE ACCESS POINTS**********&quot;
+ puts &quot;											&quot;
+ ELSE
+
+	IF ($RadioX == &quot;Radio1&quot;) THEN
+    	multiEditR1 $ATPCSTATUS $serial
+    ENDIF
+    
+    IF ($RadioX == &quot;Radio2&quot;) THEN
+    	multiEditR2 $ATPCSTATUS $serial
+    ENDIF
+
+	IF ($RadioX == &quot;Both&quot;) THEN
+    	multiEditR1 $ATPCSTATUS $serial
+        multiEditR2 $ATPCSTATUS $serial
+    ENDIF
+  ENDIF
+					}
+</content>
+  <creator>root</creator>
+  <creationDate>1450118400440</creationDate>
+  <contexts>,Device,</contexts>
+  <supprotedGroups></supprotedGroups>
+  <roles>,NetSight Administrator,</roles>
+  <saveConfigOnExit>false</saveConfigOnExit>
+  <menuScope>NONE</menuScope>
+  <scriptTimeout>180</scriptTimeout>
+  <miscXMLData></miscXMLData>
+  <rollbackScript></rollbackScript>
+  <postprocessScript></postprocessScript>
+  <scriptOwner></scriptOwner>
+</script>

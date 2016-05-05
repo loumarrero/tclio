@@ -1,0 +1,825 @@
+<script name="Wireless AP Radio Settings">
+  <comments>Wireless:AP Radio settings per deployment types</comments>
+  <category>,Config,</category>
+  <defaultCategory></defaultCategory>
+  <content># @MetaDataStart
+# @DetailDescriptionStart
+#############################################################################################
+# Extreme Networks (R) System Engineering CLI Scripting Library
+#
+# scripting.Script: Wireless Access Points Default and Multi-Edit Radio Settings
+#	Those AP radio settings were agreed by PLM , Engineering, System Engineering
+#	and GTAC teams
+# Controller version : v.10 and higher
+#
+############ PLEASE READ !!!! ##############################################################
+#
+# Deployment Type Description - choose accordingly
+#
+# 1. Proof Of Concept - Performance Only:
+# 					Use this setting only if you have no more then two Access Points
+# 					in the area - e.g. for bake off&apos;s and performance
+#					measurements.Make sure you don&apos;t use it in regular reployment!!!
+#
+# 2. Light-Density - can be used for PoC&apos;s or live deployments.
+#					Not many Access Points per geographycal area - e.g. 3-5 per floor
+#
+# 3. High-Density - live deployments (schools, universities, hospitals etc)
+#					AP&apos;s are relatively close to each other
+#
+# 4. Ultra-High Density - live deployments , mostly manual adjustments needed
+#					(stadiums , convention centers , theaters etc)
+#
+#############################################################################################
+#
+#
+# Revision : 1.01
+# Please feedback to yostrovs@extremenetworks.com
+# Last Update : January , 2016
+#
+#############################################################################################
+# @DetailDescriptionEnd
+#############################################################################################
+#
+# @SectionStart (description = Please Read Description section for Deployment Type details
+#
+#
+#
+# @VariableFieldLabel (description = &quot;Deployment Type:&quot;
+# type = String,validValues=[&quot;Proof of Concept - Performance Only&quot;, Light-Density, High-Density, Ultra-High-Density],
+# scope = global,
+#)
+set var DEPLOYMENT_TYPE High-Density
+#
+# @VariableFieldLabel (description = &quot;Access Point Platform:&quot;
+# type = String,validValues=[AP38xx,&quot;AP3935 FCC&quot;,&quot;AP3935 ROW&quot;,],
+# scope = global,
+# )
+set var AP_PLATFORM AP38xx
+#
+# @VariableFieldLabel (description = &quot;Where to apply Changes&quot;
+# type = String,validValues=[&quot;AP Default Settings&quot;,&quot;AP Multi-Edit Settings&quot;, Both]
+# scope = global,
+# )
+set var CHANGES AP Default Settings
+#
+# @SectionEnd
+
+# @SectionStart (description = *Carefull with Multi-Edit: it might change all current channels and power settings on APs*
+#)
+# @SectionEnd
+
+# @SectionStart (description = **All Radios max power will be set to 10Dbm: change it according to the site survey**
+#)
+# @SectionEnd
+
+# @SectionStart (description = ***Consider to enable DFS channels when needed.Highly Recommended!!! Not enabled by default***
+#)
+# @SectionEnd
+# @SectionStart(
+#)
+# @SectionEnd
+# @SectionStart (description = Please Read Description to understand your deployment type
+#)
+
+#@MetaDataEnd
+# ################################################################################################################
+# The Configuration templates started from here
+# ################################################################################################################
+#
+# Function for AP38xx series Default settings
+#
+######### For AP 38xx Default ##############################################################################################
+proc AP38xxDefault {DEPLOYMENT_TYPE} {
+configure CLI mode scripting ignore-error
+
+CLI	ap
+	CLI	defaults
+		CLI	ap38xx
+# Radio 1
+            CLI	radio1
+                CLI	mode anac
+                CLI	dtim 2
+                CLI	beaconp 100
+                CLI	nonUnicastQuota 100
+                CLI	rts 2346
+                CLI	frag 2346
+                CLI	domain  MyDomain
+                CLI	tx_max_power 10
+#                CLI	antsel left-middle-right
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	n_chlwidth 80
+                CLI	no atpc
+                CLI	minbrate 6
+                CLI tx_max_power 18
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+                CLI	n_chlwidth 40
+                CLI	no atpc
+                CLI	minbrate 12
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+                CLI	n_chlwidth 20
+                CLI no atpc
+                CLI	minbrate 24
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+                CLI	n_chlwidth 20
+                CLI	no atpc
+                CLI	minbrate 24
+				CLI probe-suppression enable
+                ENDIF
+#                
+               
+                CLI	n_guardinterval short
+                CLI	n_pmode auto
+                CLI	n_ptype cts only
+#                CLI	n_pbthreshold 50
+				CLI	no n_aggr_msdu
+                CLI	n_aggr_mpdu
+                CLI	n_aggr_mpdu_max 1048575
+                CLI	n_aggr_mpdu_max_subframes 64
+                CLI	n_addba_support
+                CLI	admin-mode on
+                CLI	ldpc enable
+                CLI	stbc disable
+                CLI	optimized-mcast disable
+                CLI	mcast-adaptable disable
+                CLI	mcast2ucast disabled
+                CLI	dcs
+                    CLI	mode monitor
+                    CLI	channel_plan all-non-dfs
+					CLI noise_threshold -80
+                    CLI occupancy_threshold 100
+                    CLI update_period 5
+                    CLI	exit
+                CLI	apply
+                CLI	exit
+# Radio 2 
+            CLI	radio2
+                CLI	mode gn
+                CLI	dtim 2
+                CLI	beaconp 100
+                CLI	nonUnicastQuota 100
+                CLI	rts 2346
+                CLI	frag 2346
+                CLI	domain  MyDomain
+                CLI n_chlwidth 20
+                CLI	tx_max_power 10
+#                CLI	antsel left-middle-right
+                CLI	max-distance 100
+                
+                #                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	no atpc
+                CLI	minbrate 6
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+              	CLI	no atpc
+                CLI	minbrate 6
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+     			CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+  				CLI	no atpc
+                CLI	minbrate 24
+				CLI probe-suppression enable
+                ENDIF
+#                
+                
+                
+                CLI	pmode auto
+                CLI	prate 11
+                CLI	ptype cts only
+                CLI	n_pmode auto
+                CLI	n_ptype cts only
+                CLI	no n_aggr_msdu
+                CLI	n_aggr_mpdu
+                CLI	n_aggr_mpdu_max 65535
+                CLI n_aggr_mpdu_max_subframes 64
+                CLI n_addba_support
+                CLI admin-mode on
+                CLI ldpc enable
+                CLI stbc disable
+                CLI txbf disable
+                CLI optimized-mcast disable
+                CLI mcast-adaptable disable
+                CLI mcast2ucast disabled 
+                CLI dcs
+                    CLI mode monitor
+                    CLI channel_plan 3-channel
+                    CLI exit
+                CLI apply
+                CLI exit
+            CLI exit
+}
+
+# ################################################################################################################
+#
+# Function for AP39xx series Default settings
+#
+######### For AP 39xx Default ##############################################################################################
+
+proc AP39xxDefault {DEPLOYMENT_TYPE AP_PLATFORM} {
+configure CLI mode scripting ignore-error
+
+CLI	ap
+	CLI	defaults
+		IF ($AP_PLATFORM == &quot;AP3935 FCC&quot;) THEN
+		CLI 3935FCC
+		ENDIF
+		
+		IF ($AP_PLATFORM == &quot;AP3935 ROW&quot;) THEN
+		CLI 3935ROW
+		ENDIF
+		
+	
+		
+# Radio 1
+            CLI	radio1
+                CLI	mode anac
+                CLI	dtim 2
+                CLI	beaconp 100
+                CLI	nonUnicastQuota 100
+                CLI	rts 2346
+                CLI	frag 2346
+                CLI	domain  MyDomain
+                CLI	tx_max_power 10
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	n_chlwidth 80
+                CLI	no atpc
+                CLI	minbrate 6
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+                CLI	n_chlwidth 40
+                CLI	no atpc
+                CLI	minbrate 12
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+                CLI	n_chlwidth 20
+                CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+                CLI	n_chlwidth 20
+                CLI	no atpc
+                CLI	minbrate 24
+				CLI probe-suppression enable
+                ENDIF
+#                
+                CLI	n_guardinterval short
+                CLI	n_pmode auto
+                CLI	n_ptype cts only
+                CLI	n_pbthreshold 50
+				CLI	no n_aggr_msdu
+                CLI	n_aggr_mpdu
+                CLI	n_aggr_mpdu_max 1048575
+                CLI	n_aggr_mpdu_max_subframes 64
+                CLI	n_addba_support
+                CLI	admin-mode on
+                CLI	ldpc enable
+                CLI	stbc disable
+                CLI	optimized-mcast disable
+                CLI	mcast-adaptable disable
+                CLI	mcast2ucast disabled
+                CLI	dcs
+                    CLI	mode monitor
+                    CLI	channel_plan all-non-dfs
+					CLI noise_threshold -80
+                    CLI occupancy_threshold 100
+                    CLI update_period 5
+                    CLI	exit
+                CLI	apply
+                CLI	exit
+# Radio 2 
+            CLI	radio2
+                CLI	mode gn
+                CLI	dtim 2
+                CLI	beaconp 100
+                CLI	nonUnicastQuota 100
+                CLI	rts 2346
+                CLI	frag 2346
+                CLI	domain  MyDomain
+                CLI n_chlwidth 20
+                CLI	tx_max_power 10 
+                
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	no atpc
+                CLI	minbrate 6
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+              	CLI	no atpc
+                CLI	minbrate 6
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+     			CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+				CLI probe-suppression disable
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+  				CLI	no atpc
+                CLI	minbrate 24
+				CLI probe-suppression enable
+                ENDIF
+#                
+                
+                
+                CLI	pmode auto
+                CLI	prate 11
+                CLI	ptype cts only
+                CLI	n_pmode auto
+                CLI	n_ptype cts only
+                CLI	no n_aggr_msdu
+                CLI	n_aggr_mpdu
+                CLI	n_aggr_mpdu_max 65535
+                CLI n_aggr_mpdu_max_subframes 64
+                CLI n_addba_support
+                CLI admin-mode on
+                CLI ldpc enable
+                CLI stbc disable
+                CLI optimized-mcast disable
+                CLI mcast-adaptable disable
+                CLI mcast2ucast disabled
+                CLI dcs
+                    CLI mode monitor
+                    CLI channel_plan 3-channel
+					CLI noise_threshold -80
+                    CLI occupancy_threshold 100
+                    CLI update_period 5
+                    CLI interference-wait-time 10
+                    CLI interference-event-type none
+                    CLI exit
+                CLI apply
+                CLI exit
+            CLI exit
+}				
+			
+
+
+# ##################################################################################################
+#
+# AP MULTI-EDIT
+#
+#####################################################################################################
+# AP MultiEdit Part
+# It will go through every AP in platform and change setting according to deployment type
+#
+#
+#######################################################################################################
+# AP38xx Multi-Edit Part
+#######################################################################################################
+proc AP38xxMultiEdit {DEPLOYMENT_TYPE serial} {
+
+configure CLI mode scripting ignore-error
+
+CLI	ap 
+	CLI $serial
+    	CLI radio1
+        	CLI admin-mode on
+        	CLI mode anac
+            CLI dtim 2
+            CLI beaconp 100
+            CLI nonUnicastQuota 100
+            CLI rts 2346
+            CLI frag 2346
+            CLI domain  MyDomain
+            CLI tx_max_power 10
+            CLI antsel left-middle-right
+
+               
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+				CLI ch auto
+				CLI	n_chlwidth 80
+                CLI	no atpc
+                CLI	minbrate 6
+                CLI apply
+               ENDIF
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+                CLI ch auto
+                CLI	n_chlwidth 40
+                CLI	no atpc
+                CLI	minbrate 12
+                CLI apply
+               ENDIF
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN              
+                CLI ch auto
+                CLI	n_chlwidth 20
+                CLI apply
+                CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+               ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN                
+                CLI ch auto
+                CLI	n_chlwidth 20
+                CLI	no atpc
+                CLI	minbrate 24
+                CLI apply
+                ENDIF
+#                
+            
+
+            CLI n_guardinterval short
+            CLI n_pmode auto
+            CLI n_ptype cts only
+#            CLI n_pbthreshold 50
+            CLI no n_aggr_msdu
+            CLI n_aggr_mpdu
+            CLI n_aggr_mpdu_max 1048575
+            CLI n_aggr_mpdu_max_subframes 64
+            CLI n_addba_support
+            CLI probe-suppression disable
+#            CLI admin-mode on
+            CLI ldpc enable
+            CLI stbc disable
+            CLI optimized-mcast disable
+            CLI mcast-adaptable disable
+            CLI mcast2ucast disabled
+            CLI dcs
+                CLI mode monitor
+                CLI channel_plan all-non-dfs
+                CLI exit
+            CLI apply
+            CLI exit
+# 
+# Radio 2 
+        CLI radio2
+        	CLI admin-mode on
+            CLI apply
+            CLI mode gn
+            CLI ch auto
+            CLI	n_chlwidth 20
+            CLI dtim 2
+            CLI beaconp 100
+            CLI nonUnicastQuota 100
+            CLI rts 2346
+            CLI frag 2346
+            CLI domain  MyDomain
+            CLI antsel left-middle-right
+            CLI tx_max_power 10
+            CLI pmode auto
+            CLI prate 11
+            CLI ptype cts only
+            
+                #                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	no atpc
+                CLI	minbrate 6
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+              	CLI	no atpc
+                CLI	minbrate 6
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+     			CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+  				CLI	no atpc
+                CLI	minbrate 24
+                ENDIF
+#                
+                            
+
+
+
+
+            CLI apply
+            CLI n_guardinterval short
+            CLI n_pmode none
+            CLI n_ptype cts only
+            CLI no n_aggr_msdu
+            CLI n_aggr_mpdu
+            CLI n_aggr_mpdu_max 65535
+            CLI n_aggr_mpdu_max_subframes 64
+            CLI n_addba_support
+            CLI max-distance 100
+            CLI probe-suppression disable
+            CLI ldpc enable
+            CLI stbc disable
+            CLI txbf disable
+            CLI optimized-mcast disable
+            CLI mcast-adaptable disable
+            CLI mcast2ucast disabled
+            CLI dcs
+                CLI mode monitor
+                CLI channel_plan 3-channel
+                CLI exit
+            CLI apply
+            CLI exit
+        CLI exit
+    CLI end
+   }
+#
+
+
+proc AP39xxMultiEdit {DEPLOYMENT_TYPE serial} {
+
+configure CLI mode scripting ignore-error
+
+CLI	ap 
+	CLI $serial
+    	CLI radio1
+        	CLI admin-mode on
+        	CLI mode anac
+            CLI dtim 2
+            CLI beaconp 100
+            CLI nonUnicastQuota 100
+            CLI rts 2346
+            CLI frag 2346
+            CLI domain  MyDomain
+            CLI tx_max_power 10 
+#            CLI antsel left-middle-right
+
+               
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+				CLI ch auto
+				CLI	n_chlwidth 80
+                CLI	no atpc
+                CLI	minbrate 6
+                CLI tx_max_power 18
+                CLI apply
+               ENDIF
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+                CLI ch auto
+                CLI	n_chlwidth 40
+                CLI	no atpc
+                CLI	minbrate 12
+                CLI apply
+               ENDIF
+#                
+               IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN              
+                CLI ch auto
+                CLI	n_chlwidth 20
+                CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+                CLI apply
+               ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN                
+                CLI ch auto
+                CLI	n_chlwidth 20
+                CLI	no atpc
+                CLI	minbrate 24
+                CLI apply
+                ENDIF
+#                
+            
+
+            CLI n_guardinterval short
+            CLI n_pmode auto
+            CLI n_ptype cts only
+#            CLI n_pbthreshold 50
+            CLI no n_aggr_msdu
+            CLI n_aggr_mpdu
+            CLI n_aggr_mpdu_max 1048575
+            CLI n_aggr_mpdu_max_subframes 64
+            CLI n_addba_support
+            CLI probe-suppression disable
+#            CLI admin-mode on
+            CLI ldpc enable
+            CLI stbc disable
+            CLI optimized-mcast disable
+            CLI mcast-adaptable disable
+            CLI mcast2ucast disabled
+            CLI dcs
+                CLI mode monitor
+                CLI channel_plan all-non-dfs
+                CLI exit
+            CLI apply
+            CLI exit
+# 
+# Radio 2 
+        CLI radio2
+        	CLI admin-mode on
+            CLI apply
+            CLI mode gn
+            CLI ch auto
+            CLI	n_chlwidth 20
+            CLI dtim 2
+            CLI beaconp 100
+            CLI nonUnicastQuota 100
+            CLI rts 2346
+            CLI frag 2346
+            CLI domain  MyDomain
+#            CLI antsel left-middle-right
+            CLI tx_max_power 10 
+            CLI pmode auto
+            CLI prate 11
+            CLI ptype cts only
+            
+                #                
+                IF ($DEPLOYMENT_TYPE == &quot;Proof of Concept - Performance Only&quot;) THEN
+                CLI	no atpc
+                CLI	minbrate 6
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Light-Density&quot;) THEN
+              	CLI	no atpc
+                CLI	minbrate 6
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;High-Density&quot;) THEN
+     			CLI atpc
+                CLI tx_min_power 6
+                CLI	minbrate 24
+                ENDIF
+#                
+                IF ($DEPLOYMENT_TYPE == &quot;Ultra-High-Density&quot;) THEN
+  				CLI	no atpc
+                CLI	minbrate 24
+                ENDIF
+#                
+                            
+
+
+
+
+            CLI apply
+            CLI n_guardinterval short
+            CLI n_pmode none
+            CLI n_ptype cts only
+            CLI no n_aggr_msdu
+            CLI n_aggr_mpdu
+            CLI n_aggr_mpdu_max 65535
+            CLI n_aggr_mpdu_max_subframes 64
+            CLI n_addba_support
+#            CLI max-distance 100
+            CLI probe-suppression disable
+            CLI ldpc enable
+            CLI stbc disable
+            CLI optimized-mcast disable
+            CLI mcast-adaptable disable
+            CLI mcast2ucast disabled
+            CLI dcs
+                CLI mode monitor
+                CLI channel_plan 3-channel
+                CLI exit
+            CLI apply
+            CLI exit
+        CLI exit
+    CLI end
+   }   
+#
+#
+#
+
+###############################################################################
+# END of Multi-Edit Section
+###############################################################################
+
+##############################################################################
+# Execute proccess section
+##############################################################################
+
+IF ($CHANGES == &quot;AP Default Settings&quot; || $CHANGES == &quot;Both&quot; ) THEN
+
+	IF ($AP_PLATFORM == &quot;AP38xx&quot; ) THEN
+		AP38xxDefault $DEPLOYMENT_TYPE
+	ENDIF
+	
+	IF ($AP_PLATFORM == &quot;AP3935 FCC&quot; || $AP_PLATFORM == &quot;AP3935 ROW&quot; || $AP_PLATFORM == &quot;AP3965 FCC&quot; || $AP_PLATFORM == &quot;AP3965 ROW&quot; ) THEN
+		AP39xxDefault $DEPLOYMENT_TYPE, $AP_PLATFORM
+	ENDIF
+
+ENDIF
+
+
+IF ($CHANGES == &quot;AP Multi-Edit Settings&quot; || $CHANGES == &quot;Both&quot; ) THEN
+
+CLI show ap
+
+# Splitting the AP list in different lines
+# And finding it&apos;s Serial numbers and Platform type
+
+set content $CLI_OUT
+set records [split $content &quot;\n&quot;]
+foreach line $records {
+
+set serial [lindex $line 1]
+set platform [lindex $line end]
+
+# When we finalize more platforms settings (3801,37xx etc) we will add it here
+IF ($AP_PLATFORM == &quot;AP38xx&quot; ) THEN
+
+	IF ($platform == &quot;AP3825i&quot; || $platform == &quot;AP3825e&quot; || $platform == &quot;AP3805i&quot; || $platform == &quot;AP3805e&quot; ) THEN
+   
+# AP38xx Series: In case of External Antenna we will enable Dipole Omni Antennas for all radios. Please change it according to the deployment!!!!
+
+# Extrernal Antenna Only
+			IF ($platform == &quot;AP3825e&quot;) THEN
+            CLI ap
+            CLI $serial
+            CLI professional_antenna
+            CLI leftantenna-radio1 PRO-ANT-5DIP-3 AI 3dBi Omni
+            CLI middleantenna-radio1 PRO-ANT-5DIP-3 AI 3dBi Omni
+            CLI rightantenna-radio1 PRO-ANT-5DIP-3 AI 3dBi Omni
+            CLI leftantenna-radio2 PRO-ANT-2DIP-3 BGI 3dBi Omni
+            CLI middleantenna-radio2 PRO-ANT-2DIP-3 BGI 3dBi Omni
+            CLi rightantenna-radio2 PRO-ANT-2DIP-3 BGI 3dBi Omni
+            CLI apply
+            CLI end
+			ENDIF
+            
+            IF ($platform == &quot;AP3805e&quot;) THEN
+            CLI ap
+            CLI $serial
+            CLI professional_antenna
+            CLI leftantenna-radio1 PRO-ANT-5DIP-2 5GI 3dBi Omni
+            CLI rightantenna-radio1 PRO-ANT-5DIP-2 5GI 3dBi Omni
+            CLI leftantenna-radio2 PRO-ANT-2DIP-2 2GI 3dBi Omni
+            CLi rightantenna-radio2 PRO-ANT-2DIP-2 2GI 3dBi Omni
+            CLI apply
+            CLI end
+			ENDIF
+		
+		AP38xxMultiEdit $DEPLOYMENT_TYPE $serial 
+	ENDIF
+ENDIF
+   
+# AP 39xx Series :In case of External Antenna we will enable Dipole Omni Antennas for all radios. Please change it according to the deployment!!!!
+IF ($AP_PLATFORM == &quot;AP3935 FCC&quot; || $AP_PLATFORM ==&quot;AP3935 ROW&quot; ) THEN	
+
+	IF ($platform == &quot;AP3935i-FCC&quot; || $platform == &quot;AP3935e-FCC&quot; || $platform == &quot;AP3935i-ROW&quot; || $platform == &quot;AP3935e-ROW&quot; ) THEN
+    
+# Extrernal Antenna Only
+			IF ($platform == &quot;AP3935e-FCC&quot; || $platform == &quot;AP3935e-ROW&quot;) THEN
+            CLI ap
+            CLI $serial
+            CLI professional_antenna
+            CLI port1-radio1 WS-ANT-5DIP-4 Dipole
+            CLI port1-radio2 WS-ANT-2DIP-4 Dipole
+            CLI port2-radio1 WS-ANT-5DIP-4 Dipole
+            CLI port2-radio2 WS-ANT-2DIP-4 Dipole
+            CLI port3-radio1 WS-ANT-5DIP-4 Dipole
+            CLI port3-radio2 WS-ANT-2DIP-4 Dipole
+			CLI port4-radio1 WS-ANT-5DIP-4 Dipole
+			CLI port4-radio2 WS-ANT-2DIP-4 Dipole
+            CLI apply
+            CLI end
+			ENDIF	
+		AP39xxMultiEdit $DEPLOYMENT_TYPE $serial
+	ENDIF
+ENDIF
+#           
+
+
+					}       
+ENDIF
+				  
+ </content>
+  <creator>root</creator>
+  <creationDate>1441744107300</creationDate>
+  <contexts>,Device,</contexts>
+  <supprotedGroups></supprotedGroups>
+  <roles>,NetSight Administrator,</roles>
+  <saveConfigOnExit>false</saveConfigOnExit>
+  <menuScope>NONE</menuScope>
+  <scriptTimeout>1200</scriptTimeout>
+  <miscXMLData></miscXMLData>
+  <rollbackScript></rollbackScript>
+  <postprocessScript></postprocessScript>
+  <scriptOwner></scriptOwner>
+</script>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE digester-rules PUBLIC "-//Apache Commons //DTD digester-rules XML V1.0//EN" "http://commons.apache.org/digester/dtds/digester-rules-3.0.dtd">
+<digester-rules>
+  <pattern value="ConversionRule/SourceMapping">
+    <object-create-rule classname="scripting.SourceMapping"/>
+    <set-next-rule methodname="add"
+                      paramtype="java.lang.Object"/>
+    <set-properties-rule/>
+    <bean-property-setter-rule pattern="xossyntaxexpr"/>
+    <bean-property-setter-rule pattern="tclexpr"/>
+    <bean-property-setter-rule pattern="since"/>
+    <bean-property-setter-rule pattern="casesensitive"/>
+    <bean-property-setter-rule pattern="hint"/>
+  </pattern>
+</digester-rules>

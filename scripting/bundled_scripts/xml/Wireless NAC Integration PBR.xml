@@ -1,0 +1,706 @@
+<script name="Wireless NAC Integration PBR">
+  <comments>Wireless NAC Integration for PoCs with  PBR method of redirection</comments>
+  <category>,Config,</category>
+  <defaultCategory></defaultCategory>
+  <content># @MetaDataStart
+# @DetailDescriptionStart
+######################################################################################
+# Extreme Networks (R) System Engineering CLI Scripting Library
+#
+# scripting.Script : Wireless/NAC integration for Prof of Concepts - BYOD/Guest services only
+#
+#######				Please READ!		#############################################
+#
+#		We will be using Policy Based Routing configured on your network for
+#		redirection to NAC Captive Portal.
+#		Unregistered HTTP/HTTPS traffic will be marked with CoS ToS/DSCP (40 ToS/10 Dscp/cs2)
+#
+#		If you&apos;r using other redirection methods please don&apos;t use this script!
+#		Bridged at AP topology will be used
+#		If user select the &quot;tagged&quot; topology , then br@AP tagged with VLAN ID will be
+#		created.Otherwise the default &quot;Bridged at AP Untagged&quot; topology will be used.
+#
+#		If using br@AP tagged topology , make sure your network infrustructure supports
+#		VLAN ID&apos;s provisioned here- e.g. where AP connects to network the tagged VLAN should
+#		exist there.
+#
+#		Please make sure you have BOOTPRELAY towards to the NAC appliance configured
+#		on your network infrustructure.
+#		Please make sure you have configured PBR towards to the NAC appliance on your
+#		network infrustructure.
+#
+# Revision : 0.1
+# Please feedback to yostrovs@extremenetworks.com
+# Last Update : Oct, 2015
+#
+#######################################################################################
+# @DetailDescriptionEnd
+#######################################################################################
+#
+# Define VNS Configuration parameters in this section.
+#######################################################################################
+
+# @SectionStart (description = Guest/BYOD Topology properties)
+#
+
+# @VariableFieldLabel (description = &quot;Bridged at AP topology&quot;
+# type = String,validValues=[tagged,&quot;Bridged at AP untagged&quot;]
+# scope = global,
+# )
+set var TOPOLOGY Bridged at AP untagged
+
+
+# @VariableFieldLabel (description = &quot;VLAN ID [1-4096]&quot;
+# type = String,
+# scope = global,
+# required = yes,
+# readonly = no,
+#)
+set var VLAN_ID
+
+
+# @SectionEnd
+#
+# @SectionStart (description = Your NAC Appliance Details)
+#
+# @VariableFieldLabel (description = &quot;NAC IP address&quot;
+# type = String,
+# scope = global,
+# required = yes,
+# readonly = no,
+#)
+set var NAC_IP
+#
+# @VariableFieldLabel (description = &quot;NAC Shared Secret&quot;
+# type = String,
+# scope = global,
+# required = yes,
+# readonly = no,
+#)
+set var NAC_SHARED_SECRET ETS_TAG_SHARED_SECRET
+
+
+# @SectionStart (description = WLAN Services Details)
+#
+# @VariableFieldLabel (description = &quot;SSID Name&quot;
+# type = String,
+# scope = global,
+# required = yes,
+# readonly = no,
+#)
+set var SSID
+
+
+# @SectionStart (description = You might change some of your existing Roles on Wireless Controller such as Unregistered/Enterprise Users/Assessing and so on 
+#)
+# @VariableFieldLabel (description = &quot;Do You Agree? &quot;
+# type = String,validValues=[YES,NO]
+# scope = global,
+# )
+set var AGREE NO
+
+# @MetaDataEnd
+#
+IF ($AGREE == &quot;NO&quot; ) THEN
+	error &quot;You do not agree to change some of your Wireless Roles&quot;
+ENDIF
+
+IF ($VLAN_ID &gt; 4095 || $VLAN_ID == 0 || $VLAN_ID == &quot;&quot;) THEN
+       error &quot;VLAN ID should be between 1 and 4095&quot;
+    ENDIF
+
+
+
+# Enter all CLI commands from here
+#
+#########################################################################################
+# Create NAC Radius server in Controller and NAC Integration for DHCP packet snooping
+# Snooping will not really help from controller - please add BOOTPRELAY on your
+# network infrustructure - e.g. on the Routers&apos; VLAN interface add BOOTPRELAY to the
+# NAC IP address - it will help NAC to do IP/hostname/OS Type resolution
+#
+#
+#
+# Here we will check if NAC was already provisioned in Controller
+#
+set var NAC_NAME $NAC_IP
+regsub -all {\.} $NAC_NAME &quot;_&quot; NAC_NAME
+
+configure CLI mode scripting ignore-error
+
+CLI show vnsmode radius
+	regexp  &quot;.*${NAC_IP}.*&quot; ${CLI.OUT} isNACexists
+    regexp  &quot;.*${NAC_NAME}.*&quot; ${CLI.OUT} isNACNAMEexists
+    	IF ([info exists isNACexists] || [info exists isNACNAMEexists]) THEN
+        	puts &quot;NAC already exists&quot;
+           ELSE 
+           CLI vnsmode radius
+				CLI create NAC_$NAC_NAME $NAC_IP $NAC_SHARED_SECRET
+				CLI apply
+			CLI end
+		ENDIF
+#            
+CLI show vnsmode nac
+     regexp  &quot;.*${NAC_IP}.*&quot; ${CLI.OUT} isNACDHCPexists
+         IF ([info exists isNACDHCPexists] || [info exists isNACNAMEexists]) THEN
+             puts &quot;NAC already integrated for DHCP destination address&quot;
+           ELSE
+			CLI vnsmode
+				CLI nac
+    			CLI create NAC_$NAC_NAME $NAC_IP
+       			CLI exit
+		  ENDIF          
+#
+#
+###########################################################################################
+# Creating bridged at AP topology
+# If Untagged topology is choosen we will use the default &quot;Bridged at AP untagged&quot; topology
+
+IF ($TOPOLOGY == &quot;tagged&quot;) THEN
+	CLI topology
+    	CLI create VLAN${VLAN_ID} b@ap $VLAN_ID tag
+        CLI end
+  ELSE
+  	CLI topology
+    	CLI create VLAN${VLAN_ID} b@ap $VLAN_ID untag
+        CLI end
+ENDIF
+	
+
+
+
+
+
+
+
+######################################################################################
+# Here we will create NAC default Policies.Not all of them will be used, but just as
+# a place holder
+# Most important policies are &quot;Unregistered&quot;, &quot;Guest Access&quot; and &quot;Enterprise User&quot;
+# Other policies might be used if Assessing module is enabled.
+######################################################################################
+# Here is the procedure creating all default NAC Roles and CoS with Filter Rules
+# We will call this proc later
+
+        
+proc createRoles {NAC_IP} {        
+
+CLI	cos
+CLI	    create &quot;COS_40&quot; 
+CLI	    &quot;COS_40&quot;
+CLI	        name &quot;COS_40&quot;
+CLI	        use-wlan-marking disable
+CLI	        priority none
+CLI	        tos-dscp-mask 40/FF
+CLI	        transmit-queue 7
+CLI	        apply
+CLI	        exit
+CLI	    end
+	#
+	
+	
+	# role
+CLI	role
+CLI	    create &quot;Failsafe&quot; 
+CLI	    &quot;Failsafe&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Failsafe&quot;
+CLI	        default-cos no-change
+CLI	        access-control allow
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create &quot;Administrator&quot; 
+CLI	    &quot;Administrator&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Administrator&quot;
+CLI	        default-cos no-change
+CLI	        access-control allow
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create {&quot;Deny Access&quot;} 
+CLI	    {&quot;Deny Access&quot;}
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name {&quot;Deny Access&quot;}
+CLI	        default-cos no-change
+CLI	        access-control deny
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            create 1 proto any eth 800 mac any $NAC_IP/32 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 1 852000
+CLI	            create 2 proto udp eth 800 mac any 0.0.0.0/0 port 67 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 2 1048592
+CLI	            create 3 proto udp eth 800 mac any 0.0.0.0/0 port 53 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 3 1048592
+CLI	            create 4 proto tcp eth 800 mac any 0.0.0.0/0 port 443 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 4 1179664
+CLI	            create 5 proto tcp eth 800 mac any 0.0.0.0/0 port 80 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 5 1179664
+CLI	            create 6 proto any eth any mac any 0.0.0.0/0 in none out src allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 6 -2130771968
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create {&quot;Guest Access&quot;} 
+CLI	    {&quot;Guest Access&quot;}
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name {&quot;Guest Access&quot;}
+CLI	        default-cos no-change
+CLI	        access-control deny
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            create 1 proto any eth 800 mac any $NAC_IP/32 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 1 852000
+CLI	            create 2 proto udp eth 800 mac any 0.0.0.0/0 port 67 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 2 1048592
+CLI	            create 3 proto udp eth 800 mac any 0.0.0.0/0 port 53 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 3 1048592
+CLI	            create 4 proto tcp eth 800 mac any 0.0.0.0/0 port 995 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 4 1179664
+CLI	            create 5 proto tcp eth 800 mac any 0.0.0.0/0 port 993 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 5 1179664
+CLI	            create 6 proto tcp eth 800 mac any 0.0.0.0/0 port 587 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 6 1179664
+CLI	            create 7 proto tcp eth 800 mac any 0.0.0.0/0 port 465 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 7 1179664
+CLI	            create 8 proto tcp eth 800 mac any 0.0.0.0/0 port 443 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 8 1179664
+CLI	            create 9 proto tcp eth 800 mac any 0.0.0.0/0 port 143 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 9 1179664
+CLI	            create 10 proto tcp eth 800 mac any 0.0.0.0/0 port 110 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 10 1179664
+CLI	            create 11 proto tcp eth 800 mac any 0.0.0.0/0 port 80 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 11 1179664
+CLI	            create 12 proto tcp eth 800 mac any 0.0.0.0/0 port 25 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 12 1179664
+CLI	            create 13 proto any eth any mac any 0.0.0.0/0 in none out src allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 13 -2130771968
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create {&quot;Enterprise Access&quot;} 
+CLI	    {&quot;Enterprise Access&quot;}
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name {&quot;Enterprise Access&quot;}
+CLI	        default-cos no-change
+CLI	        access-control allow
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create &quot;Quarantine&quot; 
+CLI	    &quot;Quarantine&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Quarantine&quot;
+CLI	        default-cos no-change
+CLI	        access-control deny
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            create 1 proto any eth 800 mac any $NAC_IP/32 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 1 852000
+CLI	            create 2 proto udp eth 800 mac any 0.0.0.0/0 port 67 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 2 1048592
+CLI	            create 3 proto udp eth 800 mac any 0.0.0.0/0 port 53 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 3 1048592
+CLI	            create 4 proto tcp eth 800 mac any 0.0.0.0/0 port 443 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 4 1179664
+CLI	            create 5 proto tcp eth 800 mac any 0.0.0.0/0 port 80 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 5 1179664
+CLI	            create 6 proto any eth any mac any 0.0.0.0/0 in none out src allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 6 -2130771968
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create &quot;Unregistered&quot; 
+CLI	    &quot;Unregistered&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Unregistered&quot;
+CLI	        default-cos no-change
+CLI	        access-control deny
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            create 1 proto any eth 800 mac any $NAC_IP/32 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 1 852000
+CLI	            create 2 proto udp eth 800 mac any 0.0.0.0/0 port 67 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 2 1048592
+CLI	            create 3 proto udp eth 800 mac any 0.0.0.0/0 port 53 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 3 1048592
+CLI	            create 4 proto tcp eth 800 mac any 0.0.0.0/0 port 443 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 4 1179664
+CLI	            create 5 proto tcp eth 800 mac any 0.0.0.0/0 port 80 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 5 1179664
+CLI	            create 6 proto any eth any mac any 0.0.0.0/0 in none out src allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 6 -2130771968
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create {&quot;Enterprise User&quot;} 
+CLI	    {&quot;Enterprise User&quot;}
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name {&quot;Enterprise User&quot;}
+CLI	        default-cos no-change
+CLI	        access-control allow
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create &quot;Notification&quot; 
+CLI	    &quot;Notification&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Notification&quot;
+CLI	        default-cos no-change
+CLI	        access-control allow
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+	
+CLI	role
+CLI	    create &quot;Assessing&quot; 
+CLI	    &quot;Assessing&quot;
+CLI	        filter-status enable
+CLI	        ulfilterap enable
+CLI	        apcustom disable
+CLI	        name &quot;Assessing&quot;
+CLI	        default-cos no-change
+CLI	        access-control deny
+CLI	        traffic-mirror none
+CLI	        apply
+CLI	        acfilters
+CLI	            create 1 proto any eth 800 mac any $NAC_IP/32 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 1 852000
+CLI	            create 2 proto udp eth 800 mac any 0.0.0.0/0 port 67 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 2 1048592
+CLI	            create 3 proto udp eth 800 mac any 0.0.0.0/0 port 53 in dst out none allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 3 1048592
+CLI	            create 4 proto tcp eth 800 mac any 0.0.0.0/0 port 443 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 4 1179664
+CLI	            create 5 proto tcp eth 800 mac any 0.0.0.0/0 port 80 in dst out none allow priority none tos-dscp none cos COS_40 traffic-mirror none
+CLI	            set-snmpruletype 5 1179664
+CLI	            create 6 proto any eth any mac any 0.0.0.0/0 in none out src allow priority none tos-dscp none cos none traffic-mirror none
+CLI	            set-snmpruletype 6 -2130771968
+CLI	            apply
+CLI	            exit
+CLI	        exit
+CLI	    end
+
+}
+######################################################################################################################
+# Lets check if any of existing VNS bounded to the Role &quot;Unregistered&quot; and if it doew we will delete it
+#
+# First grap all the VNS names and the delete it if its bound to Unregistered Policy
+
+CLI vnsmode
+CLI help
+
+set content $CLI_OUT
+set records [split $content &quot;\n&quot;]
+
+
+foreach line $records {
+
+set vnsName &quot;&quot;
+set res [ regexp &quot;^(.*)Configure details&quot; $line match vnsName ]
+set vnsName [string trim $vnsName]
+
+if {$res == 1 } {
+
+ 
+
+ CLI show vnsmode \&quot;$vnsName\&quot;
+
+
+regexp  &quot;.*Unregistered.*&quot; ${CLI.OUT} unregExistsVNS
+    	IF ([info exists unregExistsVNS]) THEN
+        CLI show \&quot;$vnsName\&quot;
+        	puts &quot;VNS ${vnsName} bounded to Unregistered Role&quot;
+            puts &quot; Deleting VNS ${vnsName}&quot;
+            CLI vnsmode
+            CLI delete \&quot;$vnsName\&quot;
+            CLI exit
+            CLI end
+        ENDIF
+
+
+ 	}     
+}
+
+
+
+######################################################################################################################
+#
+# We will check if Role/CoS with the same name already exists on controller, and if 
+# it does - script will wipe it out and create the new with this name. If no Roles exists at all on Controller
+# it will just create the roles and CoS
+
+configure CLI mode scripting ignore-error
+#
+CLI show role
+regexp  &quot;.*Error: No role configured.*&quot; ${CLI.OUT} isAnyRoleExists
+		IF ([info exists isAnyRoleExists]) THEN
+        	puts &quot;There are no rule exists on Controller&quot;
+            puts &quot;Lets build them up&quot;
+            createRoles $NAC_IP
+         ELSE
+# Check if any Roles from th list esist on Controller , if found it will be delited and
+# recreated
+#
+# Role Failsafe
+#
+CLI show role        
+regexp  &quot;.*Failsafe.*&quot; ${CLI.OUT} isFailsafeExists
+    	IF ([info exists isFailsafeExists]) THEN
+        	puts &quot;Role Failsafe already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Failsafe&quot;}
+            CLI end
+        ENDIF
+#
+# Role Administrator
+#
+CLI show role        
+regexp  &quot;.*Administrator.*&quot; ${CLI.OUT} isAdministratorExists
+    	IF ([info exists isAdministratorExists]) THEN
+        	puts &quot;Role Administrator already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Administrator&quot;}
+            CLI end
+        ENDIF
+#
+# Role Deny Access
+#
+CLI show role
+regexp  &quot;.*Deny Access.*&quot; ${CLI.OUT} isDenyAccessExists
+    	IF ([info exists isDenyAccessExists]) THEN
+        	puts &quot;Role Deny Access already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Deny Access&quot;}
+            CLI end
+        ENDIF
+#
+# Role Guest Access
+#
+CLI show role
+regexp  &quot;.*Guest Access.*&quot; ${CLI.OUT} isGuestAccessExists
+    	IF ([info exists isGuestAccessExists]) THEN
+        	puts &quot;Role Guest Access already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Guest Access&quot;}
+            CLI end
+        ENDIF
+#
+# Role Enterprise Access
+#
+CLI show role
+regexp  &quot;.*Enterprise Access.*&quot; ${CLI.OUT} isEnterpriseAccessExists
+    	IF ([info exists isEnterpriseAccessExists]) THEN
+        	puts &quot;Role Enterprise Access already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Enterprise Access&quot;}
+            CLI end
+        ENDIF
+#
+# Role Quarantine
+#
+CLI show role
+regexp  &quot;.*Quarantine.*&quot; ${CLI.OUT} isQuarantineExists
+    	IF ([info exists isQuarantineExists]) THEN
+        	puts &quot;Role Quarantine already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Quarantine&quot;}
+            CLI end
+        ENDIF
+#
+# Role Unregistered
+#
+CLI show role
+regexp  &quot;.*Unregistered.*&quot; ${CLI.OUT} isUnregisteredExists
+    	IF ([info exists isUnregisteredExists]) THEN
+        	puts &quot;Role Unregistered already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Unregistered&quot;}
+            CLI end
+        ENDIF
+#
+# Role Enterprise User
+#
+CLI show role
+regexp  &quot;.*Enterprise User.*&quot; ${CLI.OUT} isEnterpriseUserExists
+    	IF ([info exists isEnterpriseUserExists]) THEN
+        	puts &quot;Role Enterprise User already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Enterprise User&quot;}
+            CLI end
+        ENDIF
+#
+# Role Notification
+#
+CLI show role
+regexp  &quot;.*Notification.*&quot; ${CLI.OUT} isNotificationExists
+    	IF ([info exists isNotificationExists]) THEN
+        	puts &quot;Role Notification already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Notification&quot;}
+            CLI end
+        ENDIF
+#
+# Assessing
+#
+CLI show role
+regexp  &quot;.*Assessing.*&quot; ${CLI.OUT} isAssessingExists
+    	IF ([info exists isAssessingExists]) THEN
+        	puts &quot;Role Assessing already exists, deleting it and creating the new one&quot;
+            CLI role
+            CLI delete {&quot;Assessing&quot;}
+            CLI end
+		ENDIF
+
+# Check if COS with name COS_40 exists
+CLI show cos
+regexp  &quot;.*COS_40.*&quot; ${CLI.OUT} isCOSExists
+    	IF ([info exists isCOSExists]) THEN
+        	puts &quot;CoS COS_40 already exists, deleting it and creating the new one&quot;
+            CLI cos
+            CLI delete {&quot;COS_40&quot;}
+            CLI end
+        ENDIF
+#
+# Recreating all Roles and CoS
+createRoles $NAC_IP
+#
+
+#
+ENDIF
+#
+#######################################################################################
+# Create WLAN Service
+# For now manually select AP&apos;s for this SSID
+#######################################################################################
+#
+CLI	wlans
+    CLI	create \&quot;${SSID}\&quot; mode std ssid \&quot;${SSID}\&quot; 
+    CLI	\&quot;${SSID}\&quot;
+        CLI	status enable
+#        ***aplist &quot;TestAP&quot; both****
+        CLI	ssid \&quot;${SSID}\&quot;
+        CLI	default-topology VLAN${VLAN_ID}
+        CLI	apply
+        CLI	auth
+            CLI	mac enable
+            CLI	vsa-ap enable
+            CLI	vsa-ssid enable
+            CLI	vsa-vns enable
+            CLI	vsa-policy enable
+            CLI	vsa-topology enable
+            CLI	use-zone enable
+            CLI	apply
+            CLI	config NAC_$NAC_NAME role mac
+            CLI	config NAC_$NAC_NAME role acct
+            CLI exit
+        CLI qos-policy
+        	CLI dot11e disable
+            CLI uapsd disable
+            CLI apply
+            CLI exit
+    CLI	end
+#
+##########################################################################################
+# Finally Creating VNS to tigh all together!
+#
+CLI vnsmode
+    CLI	create \&quot;${SSID}\&quot; wlans \&quot;${SSID}\&quot; pol &quot;Unregistered&quot;
+    CLI	\&quot;${SSID}\&quot;
+        CLI	wlans-name \&quot;${SSID}\&quot;
+        CLI	non-auth &quot;Unregistered&quot;
+        CLI	auth non-auth
+        CLI	status enable
+        CLI	name \&quot;${SSID}\&quot;
+        CLI	apply
+        CLI	exit
+    CLI	end
+#
+###########################################################################################
+# Btw , its perfect idea to enable this SSID by Default
+# So any new AP connected to Controller will enable this radio
+CLI	ap
+    CLI	defaults
+        CLI	assign
+            CLI	wlans-list \&quot;${SSID}\&quot; radio1
+            CLI	wlans-list \&quot;${SSID}\&quot; radio2
+            CLI	apply
+            CLI	exit
+        CLI	exit
+</content>
+  <creator>root</creator>
+  <creationDate>1442937725111</creationDate>
+  <contexts>,Device,</contexts>
+  <supprotedGroups></supprotedGroups>
+  <roles>,NetSight Administrator,</roles>
+  <saveConfigOnExit>false</saveConfigOnExit>
+  <menuScope>NONE</menuScope>
+  <scriptTimeout>60</scriptTimeout>
+  <miscXMLData></miscXMLData>
+  <rollbackScript></rollbackScript>
+  <postprocessScript></postprocessScript>
+  <scriptOwner></scriptOwner>
+</script>
