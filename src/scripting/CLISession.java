@@ -144,7 +144,7 @@ public class CLISession{
 
             _connection.connect();
             
-            boolean passwordUsed = authenticate(loginUser, loginPassword);
+            boolean passwordUsed = authSSH(loginUser, loginPassword);
             boolean userPromptExpected = false;
             boolean passwordPromptExpected = !passwordUsed;
             
@@ -163,6 +163,16 @@ public class CLISession{
         }
     }
 
+    public boolean authTelnet(String loginid,String password){
+        // telnet authentication
+        List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
+        expectList.add(new ExpectInfo(null,"login:",loginid));
+        expectList.add(new ExpectInfo(null,"password:",password));
+        // TODO process errors
+        runExpects(expectList);
+        return true;
+    }
+    
 
     /**
      * Authenticate the connection. 
@@ -175,7 +185,7 @@ public class CLISession{
      * @throw IllegalStateException - called at wrong time
      * @throw UnsupportedOperationException - the connection does not support explicit authentication
      */
-    public boolean authenticate(String loginid, String password)
+    public boolean authSSH(String loginid, String password)
             throws Exception
     {
         if (_connection == null)
@@ -296,10 +306,13 @@ public class CLISession{
 
 
 
-    public void telnet(String ip) throws IOException{
+    public void telnet(String ip,String loginid,String password) throws IOException{
         System.out.println(String.format("telnet to %s:%d",ip,23));
         tc = new TelnetClient();
         tc.connect(ip, 23);
+
+        // TODO: add support for banner
+        authTelnet(loginid,password);
     }
     
     public InputStream getInputStream() {
@@ -312,11 +325,9 @@ public class CLISession{
     
     
     public void testXOSExpect(){
+        // telnet authentication
         List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
-        expectList.add(new ExpectInfo(null,"login:","admin"));
-        expectList.add(new ExpectInfo(null,"password:","n7830466"));
-        // TODO: add support for banner
-
+        
         ExpectInfo cmd = new ExpectInfo("show system");
         cmd.record = true;
         cmd.addPattern("to quit:"," ",true);
@@ -523,10 +534,10 @@ public class CLISession{
     public static void main(String[] args) {
        CLISession test = new CLISession();
         try {
-            //test.telnet("10.54.147.249");
-            //test.testXOSExpect();
-            test.ssh("10.56.0.10",22,"engineer","engineer");
-            test.testEOSExpect();
+            test.telnet("10.54.147.249","admin","n7830466");
+            test.testXOSExpect();
+//            test.ssh("10.56.0.10",22,"engineer","engineer");
+//            test.testEOSExpect();
         } catch (Exception e) {
             e.printStackTrace();
         }
