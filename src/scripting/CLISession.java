@@ -27,6 +27,10 @@ public class CLISession{
 
     private Logger _logger = Logger.getLogger(this.getClass().getName());
     
+    private String systemPrompt;
+    
+    
+    
     // telnet based on apache net
     private TelnetClient tc = null;
     
@@ -47,6 +51,16 @@ public class CLISession{
                     + ChannelCondition.EOF
                     + ChannelCondition.EOF
                     + ChannelCondition.TIMEOUT;
+    
+    static class QuestionPrompt {
+        String prompt;
+        String reply;
+
+        public QuestionPrompt(String p,String r){
+            prompt = p;
+            reply = r;
+        }
+    }
     
     static class Response {
         String err;
@@ -166,8 +180,12 @@ public class CLISession{
             //throw new Exception("communication error while connecting: "+ ex);
         }
     }
+    
+    public void setSystemPrompt(String prompt){
+        systemPrompt = prompt;
+    }
 
-    public boolean authTelnet(String loginid,String password){
+    protected boolean authTelnet(String loginid,String password){
         // telnet authentication
         List<ExpectCmd> expectList = new ArrayList<ExpectCmd>();
         expectList.add(new ExpectCmd(null,"login:",loginid));
@@ -190,7 +208,7 @@ public class CLISession{
      * @throw IllegalStateException - called at wrong time
      * @throw UnsupportedOperationException - the connection does not support explicit authentication
      */
-    public boolean authSSH(String loginid, String password)
+    protected boolean authSSH(String loginid, String password)
             throws Exception
     {
         if (_connection == null)
@@ -331,9 +349,25 @@ public class CLISession{
     public String cli(String cmd){
         ExpectCmd expectCmd = new ExpectCmd(cmd);
         expectCmd.record = true;
-        expectCmd.addPattern("->",null,false);
-      //  expectCmd.addPattern("to quit:"," ",true);
-       // expectCmd.addPattern(" #$",null,false);
+        expectCmd.addPattern(systemPrompt,null,false); // required
+        return cli(expectCmd);
+    }
+
+    public String cli(String cmd,QuestionPrompt questionPrompt){
+        List<QuestionPrompt> questionPrompts = new ArrayList<>();
+        questionPrompts.add(questionPrompt);
+        return cli(cmd,questionPrompts);
+    }
+    
+    public String cli(String cmd, List<QuestionPrompt> qprompts){
+        ExpectCmd expectCmd = new ExpectCmd(cmd);
+        expectCmd.record = true;
+        expectCmd.addPattern(systemPrompt,null,false); // required
+
+        for(QuestionPrompt questionPrompt: qprompts){
+            expectCmd.addPattern(questionPrompt.prompt,questionPrompt.reply,true); 
+        }
+        expectCmd.addPattern(systemPrompt,null,false);
         return cli(expectCmd);
     }
     
@@ -553,11 +587,14 @@ public class CLISession{
     public static void main(String[] args) {
        CLISession test = new CLISession();
         try {
-//            test.telnet("10.54.147.249","admin","n7830466");
-//            test.cli("show system");
+              test.telnet("10.54.147.249","admin","n7830466");
+              test.setSystemPrompt(" #$");
+              System.out.println(test.cli("show system", new QuestionPrompt("to quit:"," ")));
             //test.testXOSExpect();
-            test.ssh("10.56.0.10",22,"engineer","engineer");
-            System.out.println(test.cli("show system"));
+//            test.ssh("10.56.0.10",22,"engineer","engineer");
+//            test.setSystemPrompt("->");
+//            System.out.println(test.cli("show version"));
+//            System.out.println(test.cli("show system"));
         } catch (Exception e) {
             e.printStackTrace();
         }
