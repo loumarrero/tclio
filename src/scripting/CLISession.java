@@ -296,7 +296,7 @@ public class CLISession implements Runnable{
 
   
     public static void main(String[] args) {
-       NIOTest test = new NIOTest();
+       CLISession test = new CLISession();
         try {
             test.start();
         } catch (IOException e) {
