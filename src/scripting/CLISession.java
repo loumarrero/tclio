@@ -13,18 +13,13 @@ import java.util.regex.Pattern;
 /**
  * Created by lmarrero on 4/27/2016.
  */
-public class CLISession implements Runnable{
+public class CLISession{
 
     private static int SO_TIMEOUT = 5000;
     private static int RETRIES  = 3;
     private static int BUF_SIZE = 1024;// 8192;
     
     TelnetClient tc = null;
-    
-    public CLISession(){
-        tc = new TelnetClient();
-    }
-    
     
     class Response {
         String err;
@@ -107,18 +102,29 @@ public class CLISession implements Runnable{
     }
     
     
-    public void start() throws IOException{
-        System.out.println("connecting....");
-        tc.connect("10.54.147.249", 23);
-
-        Thread thread = new Thread(this);
-        thread.start();
+    public void ssh(String ip){
+        System.out.println(String.format("ssh to %s:%d",ip,23));
+        testExpect();
     }
     
     
+    public void telnet(String ip) throws IOException{
+        System.out.println(String.format("telnet to %s:%d",ip,23));
+        tc = new TelnetClient();
+        tc.connect(ip, 23);
+        testExpect();
+    }
     
-    public void run() {
-        
+    public InputStream getInputStream() {
+        return  tc.getInputStream();
+    }
+    
+    public OutputStream getOutputStream() {
+        return tc.getOutputStream();
+    }
+    
+    
+    public void testExpect(){
         List<ExpectInfo> expectList = new ArrayList<ExpectInfo>();
         expectList.add(new ExpectInfo(null,"login:","admin"));
         expectList.add(new ExpectInfo(null,"password:","n7830466"));
@@ -137,7 +143,7 @@ public class CLISession implements Runnable{
 
         runExpects(expectList);
     }
-
+    
     public void runExpects(List<ExpectInfo> expects){
     
         StringBuilder stringBuilder = new StringBuilder();
@@ -159,7 +165,7 @@ public class CLISession implements Runnable{
         boolean sent = false;
         try {
         //    System.out.println("Sending: "+cmd);
-            OutputStream outstr = tc.getOutputStream();
+            OutputStream outstr = getOutputStream();
             outstr.write(cmd.getBytes(), 0 , cmd.length());
             outstr.flush();
             sent = true;
@@ -196,7 +202,7 @@ public class CLISession implements Runnable{
     public Response expect(ExpectInfo expectInfo) {
 
          Response response = new Response();
-         InputStream instr = tc.getInputStream();
+         InputStream instr = getInputStream();
          StringBuilder outputBuilder = new StringBuilder();
          boolean done =false;
 
@@ -289,7 +295,8 @@ public class CLISession implements Runnable{
   
     public void close() {
         try {
-            tc.disconnect();
+            if(tc!=null)
+                tc.disconnect();
         } catch (IOException e) {
         }
     }
@@ -298,7 +305,7 @@ public class CLISession implements Runnable{
     public static void main(String[] args) {
        CLISession test = new CLISession();
         try {
-            test.start();
+            test.telnet("10.54.147.249");
         } catch (IOException e) {
             e.printStackTrace();
         }
