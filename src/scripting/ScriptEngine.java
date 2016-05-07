@@ -26,13 +26,11 @@ enum  Scripts {
     File updateDeltafile = null;
     File processedDeltafile = null;
     TclConvertor convertor;
-    Map<String, VendorRules> vendorRulesMap;
+    
     
    private Scripts() {        
         try {
             loadScripts();
-            vendorRulesMap =  VendorRules.loadRules();
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -117,7 +115,7 @@ enum  Scripts {
 public class ScriptEngine {
     private Interp interp;
     private String scriptID;
-    private String deviceIP;
+    private String host;
     private StringBuilder responseBuilder;
     
     public ScriptEngine(String scriptID){
@@ -125,7 +123,7 @@ public class ScriptEngine {
         responseBuilder = new StringBuilder();
     }
     
-    
+   
     public void eval(Map<String,?> localVars){
      
         if(interp==null){
@@ -136,7 +134,6 @@ public class ScriptEngine {
             
             // compile original tcl script 
             String script = compile(localVars);
-
             
             setGlobalVariables(localVars);
             

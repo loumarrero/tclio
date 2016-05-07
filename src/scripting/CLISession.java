@@ -52,7 +52,7 @@ public class CLISession{
                     + ChannelCondition.EOF
                     + ChannelCondition.TIMEOUT;
     
-    static class QuestionPrompt {
+    public static class QuestionPrompt {
         String prompt;
         String reply;
 
@@ -553,10 +553,21 @@ public class CLISession{
   
     public void close() {
         try {
-            if(tc!=null)
+            if(tc!=null) {
                 tc.disconnect();
+            }
+            
         } catch (IOException e) {
+        }finally {
+            tc = null;
         }
+
+        if (_session != null)
+            _session.close();
+        if (_connection != null)
+            _connection.close();
+        _session = null;
+        _connection = null;
     }
 
     // Adjust any options on the connection.
@@ -585,18 +596,20 @@ public class CLISession{
     }
     
     public static void main(String[] args) {
-       CLISession test = new CLISession();
+       CLISession cliSession = new CLISession();
         try {
-              test.telnet("10.54.147.249","admin","n7830466");
-              test.setSystemPrompt(" #$");
-              System.out.println(test.cli("show system", new QuestionPrompt("to quit:"," ")));
-            //test.testXOSExpect();
-//            test.ssh("10.56.0.10",22,"engineer","engineer");
-//            test.setSystemPrompt("->");
-//            System.out.println(test.cli("show version"));
-//            System.out.println(test.cli("show system"));
+            cliSession.telnet("10.54.147.249","admin","n7830466");
+            cliSession.setSystemPrompt(" #$");
+            System.out.println(cliSession.cli("show system", new QuestionPrompt("to quit:"," ")));
+            //cliSession.testXOSExpect();
+//            cliSession.ssh("10.56.0.10",22,"engineer","engineer");
+//            cliSession.setSystemPrompt("->");
+//            System.out.println(cliSession.cli("show version"));
+//            System.out.println(cliSession.cli("show system"));
         } catch (Exception e) {
             e.printStackTrace();
+        }finally {
+            cliSession.close();
         }
     }
 }

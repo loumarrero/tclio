@@ -19,9 +19,21 @@
             <alias attr-name="value" prop-name="value"/>
          </set-properties-rule>
          <bean-property-setter-rule pattern="saveConfigCommand"/>
+       <bean-property-setter-rule pattern="shellPrompt"/>
+       <bean-property-setter-rule pattern="loginPrompt"/>
+       <bean-property-setter-rule pattern="passwordPrompt"/>
       <set-top-rule methodname="setParent" />
       <set-next-rule methodname="addFamilyRule" />
    </pattern>
+    
+    <pattern value="commandRules/vendor/family/morePrompt">
+        <object-create-rule
+                classname="scripting.MorePrompt"/>
+        <bean-property-setter-rule pattern="prompt"/>
+        <bean-property-setter-rule pattern="response"/>
+        <set-top-rule methodname="setParent" />
+        <set-next-rule methodname="addMorePrompts" />
+    </pattern>
 
    <pattern value="commandRules/vendor/family/CommandProperty">
        <object-create-rule

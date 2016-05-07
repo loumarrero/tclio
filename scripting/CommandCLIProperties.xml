@@ -29,8 +29,15 @@ in second option you can specify other command properties (like timeout in this 
 
 -->
 <commandRules>
-  <vendor name="Extreme">
+  <vendor name="extreme">
    <family value=".*">
+     <shellPrompt>[\\S\\s]*[.]\\d+[ ][#>][ ]$</shellPrompt>
+     <loginPrompt>[\\S]*(login|Username|login as):[\\S]*</loginPrompt>
+     <passwordPrompt>[\\S]*password:[\\S]*</passwordPrompt>
+     <morePrompt>
+         <prompt>to quit:</prompt>
+         <response>y</response>
+    </morePrompt>
     <saveConfigCommand>save</saveConfigCommand>
      <!--  enable ssh2 -->
      <CommandProperty command="(?i)en.... ss...*">
@@ -112,14 +119,106 @@ in second option you can specify other command properties (like timeout in this 
      </CommandProperty>
     </family>
    </vendor>
-   <vendor name="*">
-   <family value=".*">
-   <saveConfigCommand>save\r\nyes</saveConfigCommand>
-     <CommandProperty command=".*">
-      <errors>
-       <messagePattern>$ERROR</messagePattern>
-      </errors>
-     </CommandProperty>
-   </family>
- </vendor>
+  <vendor name="enterasys">
+        <family value=".*">
+            <shellPrompt>->$</shellPrompt>
+            <loginPrompt>[\\S]*(login|Username|login as):[\\S]*</loginPrompt>
+            <passwordPrompt>[\\S]*password:[\\S]*</passwordPrompt>
+            <morePrompt>
+                <prompt>to quit:</prompt>
+                <response>y</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
+  <vendor name="chantry">
+        <family value=".*">
+            <shellPrompt>(?s).*#</shellPrompt>
+            <loginPrompt>[\\S]*(login|Username|login as):[\\S]*</loginPrompt>
+            <passwordPrompt>[\\S]*password:[\\S]*</passwordPrompt>
+            <morePrompt>
+                <prompt>to quit:</prompt>
+                <response>y</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
+  <vendor name="cisco">
+        <family value=".*">
+            <shellPrompt>(?s).*[#>]</shellPrompt>
+            <loginPrompt>[\\S]*(login|Username|login as):[\\S]*</loginPrompt>
+            <passwordPrompt>[\S]*password:[\S]*</passwordPrompt>
+            <morePrompt>
+                <prompt>-More--</prompt>
+                <response>y</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
+  <vendor name="avaya">
+        <family value=".*">
+            <shellPrompt>[#>][ ]$</shellPrompt>
+            <loginPrompt>login:</loginPrompt>
+            <passwordPrompt>Password:</passwordPrompt>
+            <morePrompt>
+                <prompt>q to quit:</prompt>
+                <response>"y"</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
+  <vendor name="3com">
+        <family value=".*">
+            <shellPrompt>[#>$]</shellPrompt>
+            <loginPrompt>login:</loginPrompt>
+            <passwordPrompt>password:</passwordPrompt>
+            <morePrompt>
+                <prompt>Press|to continue or|to quit:</prompt>
+                <response>y</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
+    <vendor name="*">
+        <family value=".*">
+            <shellPrompt>[#>$]</shellPrompt>
+            <loginPrompt>[\\S]*(login|Username|login as):[\\S]*</loginPrompt>
+            <passwordPrompt>[\\S]*password:[\\S]*</passwordPrompt>
+            <morePrompt>
+                <prompt>Press|to continue or|to quit:|--More--</prompt>
+                <response>y</response>
+            </morePrompt>
+            <saveConfigCommand>save\r\nyes</saveConfigCommand>
+            <CommandProperty command=".*">
+                <errors>
+                    <messagePattern>$ERROR</messagePattern>
+                </errors>
+            </CommandProperty>
+        </family>
+    </vendor>
  </commandRules>
