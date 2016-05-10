@@ -1,8 +1,6 @@
 package scripting;
 
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -13,9 +11,9 @@ import java.util.logging.Logger;
  * {@link ScriptingClient} is a singleton that supports executing system scripts (tcl based)
  * to devices over telnet/ssh. The implementation leverages the legacy scripting APIs while exposing a
  * simpler and a more concise way of processing script request/responses asynchronously.
- *
+ * <p>
  * To use the {@code ScriptingClient}, the following preconditions must be done:
- *
+ * <p>
  * <pre>
  *     1. Create a TCL script in the following directory:
  *
@@ -38,41 +36,41 @@ import java.util.logging.Logger;
  *
  *         common/etc/state/server/appdata/scripting/bundled_scripts/updated_scripts.list
  *
- *     3. Create a {@code ScriptRequest(String name)}
+ *     3. Create a {@code ScriptContext(String name)}
  *
  *         the name should match the in the script xml file (e.g., <script name="Config_Syslog">)
  *         add values for variables referenced in the script when the device is added
- *         via {@code ScriptRequest.addDevice(id,params)}.
+ *         via {@code ScriptContext.addDevice(id,params)}.
  *
  *     4. Create a {@link ScriptListener} to handle async responses
  * </pre>
- *
+ * <p>
  * Example:
- *
+ * <p>
  * <pre>{@code
  *
- *      ScriptRequest request = new ScriptRequest("Config_Syslog");
+ *      ScriptContext request = new ScriptContext("Config_Syslog");
  *      Map<String,String> params = new HashMap<>();
  *      params.put("hostIP","10.10.10.10");
  *      request.addDevice(deviceID,params);
  *
  *      ScriptingClient.INSTANCE.submit(request,new ScriptListener() {
  *
- *          boolean beforeScriptRun(ScriptRequest request){...}
+ *          boolean beforeScriptRun(ScriptContext request){...}
  *
- *          void afterScriptRun(ScriptRequest request,ScriptResponse response){...}
+ *          void afterScriptRun(ScriptContext request,ScriptResponse response){...}
  *      });
  *
  * }
  * </pre>
  *
- * @author  lmarrero
- * @since   OneView 7.0
+ * @author lmarrero
+ * @since OneView 7.0
  */
 public enum ScriptingClient {
     INSTANCE;
 
-    private static final Logger logger   = Logger.getLogger(ScriptingClient.class.getName());
+    private static final Logger logger = Logger.getLogger(ScriptingClient.class.getName());
     private ExecutorService executor;
     private ConcurrentLinkedQueue<FutureRequestTask> futures;
 
@@ -86,7 +84,7 @@ public enum ScriptingClient {
         //   n_cpu = number of cores available to the jvm
         //   u_cpu = target cpu utilization
         //   w/c   = ratio of wait time to compute time
-        int maxThreads = (int) (Runtime.getRuntime().availableProcessors() * 0.30 * (1+10));
+        int maxThreads = (int) (Runtime.getRuntime().availableProcessors() * 0.30 * (1 + 10));
         maxThreads = Integer.getInteger("extreme.scriptingclient.maxthreads", maxThreads);
 
         executor = Executors.newFixedThreadPool(maxThreads,
@@ -99,70 +97,70 @@ public enum ScriptingClient {
 
     /**
      * Submits the given request at some time in the future. The {@code ScriptListener} will be
-     * called before and after the {@code ScriptRequest.call}.
+     * called before and after the {@code ScriptContext.call}.
      *
-     * @param request the callable task
+     * @param request        the callable task
      * @param scriptListener the callback for handling the response
      */
-    public void submit(ScriptRequest request, ScriptListener scriptListener){
+    public void submit(ScriptContext request, ScriptListener scriptListener) {
+
 
         // Only called as a safety net to clean up any misbehaved tasks that didn't exit cleanly.
         // in the time it specified in the request.
         purgeExpiredTasks();
-        
+
         try {
-            ScriptRunner scriptRunner = new ScriptRunner(request,scriptListener);
-            
-            logger.log(Level.FINE,"adding request ["+request.getScriptName()+':'+scriptRunner.getId()+"] to executor");
+            ScriptRunner scriptRunner = new ScriptRunner(request, scriptListener);
+
+            logger.log(Level.FINE, "adding request [" + request.getScriptName() + ':' + scriptRunner.getId() + "] to executor");
             Future<ScriptResponse> ft = executor.submit(scriptRunner);
-            FutureRequestTask futureRequestTask = new FutureRequestTask(scriptRunner,ft);
+            FutureRequestTask futureRequestTask = new FutureRequestTask(scriptRunner, ft);
             futures.offer(futureRequestTask);
         } catch (Exception e) {
-            logger.log(Level.SEVERE,e.getMessage(),e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 
 
     /**
      * Submits the given request at some time in the future. The {@code ScriptListener} will be
-     * called before and after the {@code ScriptRequest.call}.
+     * called before and after the {@code ScriptContext.call}.
      *
      * @param request the callable task
      */
-    public Future<ScriptResponse> submit(ScriptRequest request){
+    public Future<ScriptResponse> submit(ScriptContext request) {
 
         Future<ScriptResponse> futureResponse = null;
-        
-        try {
-            ScriptRunner scriptRunner = new ScriptRunner(request,null);
 
-            logger.log(Level.FINE,"submitting request ["+request.getScriptName()+':'+scriptRunner.getId()+"] to executor");
+        try {
+            ScriptRunner scriptRunner = new ScriptRunner(request, null);
+
+            logger.log(Level.FINE, "submitting request [" + request.getScriptName() + ':' + scriptRunner.getId() + "] to executor");
             futureResponse = executor.submit(scriptRunner);
-            
+
         } catch (Exception e) {
-            logger.log(Level.SEVERE,e.getMessage(),e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
-        
+
         return futureResponse;
     }
 
     /**
      * Submits the given request at some time in the future. The {@code ScriptListener} will be
-     * called before and after the {@code ScriptRequest.call}.
-     *
+     * called before and after the {@code ScriptContext.call}.
      */
-    public ScriptResponse submitAndWait(ScriptRequest request, long secs){
-        
+    public ScriptResponse submitAndWait(ScriptContext request, long secs) {
+
         ScriptResponse response = new ScriptResponse();
-        
-        ScriptRunner scriptRunner = new ScriptRunner(request,null);
-        
+
+        ScriptRunner scriptRunner = new ScriptRunner(request, null);
+
         try {
-            logger.log(Level.FINE,"submitting request ["+request.getScriptName()+':'+scriptRunner.getId()+"] to executor");
+            logger.log(Level.FINE, "submitting request [" + request.getScriptName() + ':' + scriptRunner.getId() + "] to executor");
             Future<ScriptResponse> ft = executor.submit(scriptRunner);
-            response = ft.get(secs,TimeUnit.SECONDS);
+            response = ft.get(secs, TimeUnit.SECONDS);
         } catch (Exception e) {
-            logger.log(Level.SEVERE,e.getMessage(),e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return response;
     }
@@ -173,10 +171,10 @@ public enum ScriptingClient {
      * running it will be sent an interruption exception but will be up to the request to
      * "honor" this interruption. That is, if the request was not designed to be handle
      * interrupted request then this cancel will simply mark it as cancelled.
-     *
+     * <p>
      * <p>This method does not wait for actively executing tasks to
      * terminate.
-     *
+     * <p>
      * <p>There are no guarantees beyond best-effort attempts to stop
      * processing actively executing tasks.
      *
@@ -184,16 +182,16 @@ public enum ScriptingClient {
      */
     public void cancel(int id) {
         FutureRequestTask foundTask = null;
-        for(FutureRequestTask task: futures){
-            if(task.runner.requestID == id){
+        for (FutureRequestTask task : futures) {
+            if (task.runner.requestID == id) {
                 foundTask = task;
                 break;
             }
         }
 
-        if(foundTask!=null){
+        if (foundTask != null) {
             //logger.log(Level.FINER,"removing request: "+id);
-            System.out.println("removing request: "+id);
+            System.out.println("removing request: " + id);
             try {
                 foundTask.response.cancel(true);
             } finally {
@@ -206,13 +204,12 @@ public enum ScriptingClient {
     /**
      * Attempts a graceful shutdown of all actively executing requests. In addition, it will close
      * the {@code Executor} which will prevent any {@code submit} from working.
-     *
+     * <p>
      * <p>This method does not wait for actively executing tasks to
      * terminate.
-     *
+     * <p>
      * <p>There are no guarantees beyond best-effort attempts to stop
      * processing actively executing tasks.
-     *
      */
     public void shutdown() {
         // first graceful shutdown all tasks and notify the listener
@@ -220,55 +217,54 @@ public enum ScriptingClient {
 
         // then shutdown the executor
         try {
-            logger.log(Level.FINER,"attempt to shutdown executor");
+            logger.log(Level.FINER, "attempt to shutdown executor");
             executor.shutdown();
             executor.awaitTermination(5, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e) {
-            logger.log(Level.FINER,"tasks interrupted: "+e);
-        }
-        finally {
+        } catch (InterruptedException e) {
+            logger.log(Level.FINER, "tasks interrupted: " + e);
+        } finally {
             if (!executor.isTerminated()) {
-                logger.log(Level.FINER,"cancel non-finished tasks");
+                logger.log(Level.FINER, "cancel non-finished tasks");
             }
             executor.shutdownNow();
-            logger.log(Level.FINER,"shutdown finished");
+            logger.log(Level.FINER, "shutdown finished");
         }
     }
 
 
     private void cancelAll() {
-        for(FutureRequestTask task: futures){
-            logger.log(Level.FINER,"cancelling request: "+task.runner.getId());
+        for (FutureRequestTask task : futures) {
+            logger.log(Level.FINER, "cancelling request: " + task.runner.getId());
             task.response.cancel(true);
         }
     }
 
     public void showOutstanding() {
-        if(!futures.isEmpty()){
+        if (!futures.isEmpty()) {
             System.out.println("Outstanding requests:");
-            for(FutureRequestTask task: futures){
+            for (FutureRequestTask task : futures) {
                 try {
-                    System.out.println("\trequest: "+task.runner.runScriptReq.getScriptName());
-                } catch (Exception e) {                }
+                    System.out.println("\trequest: " + task.runner.scriptContext.getScriptName());
+                } catch (Exception e) {
+                }
                 // task.response.cancel(true);
-            }      
-        }else{
+            }
+        } else {
             System.out.println("No requests outstanding");
         }
-      
+
     }
 
     private void purgeExpiredTasks() {
         try {
-            for(FutureRequestTask task: futures){
-                if(task.runner.hasExpired()){
-                    logger.log(Level.FINER,"cancelling request: "+task.runner.getId());
+            for (FutureRequestTask task : futures) {
+                if (task.runner.hasExpired()) {
+                    logger.log(Level.FINER, "cancelling request: " + task.runner.getId());
                     task.response.cancel(true);
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.FINER,"exception in purgeExpiredTasks: "+e.getMessage());
+            logger.log(Level.FINER, "exception in purgeExpiredTasks: " + e.getMessage());
         }
     }
 
@@ -277,31 +273,31 @@ public enum ScriptingClient {
         Future<ScriptResponse> response;
         ScriptRunner runner;
 
-        FutureRequestTask(ScriptRunner runner,Future<ScriptResponse> response) {
+        FutureRequestTask(ScriptRunner runner, Future<ScriptResponse> response) {
             this.runner = runner;
             this.response = response;
         }
 
         protected void done() {
-            logger.log(Level.FINER,"removing request: "+runner.requestID);
+            logger.log(Level.FINER, "removing request: " + runner.requestID);
             futures.remove(this);
         }
     }
 
-    static class ScriptRunner implements Callable<ScriptResponse>{
+    class ScriptRunner implements Callable<ScriptResponse> {
         int requestID;
         int waitTime;
         long startTime;
         long endTime;
-        ScriptRequest         runScriptReq;
+        ScriptContext scriptContext;
         ScriptListener externalListener;
-        Boolean CONTINUE  = Boolean.FALSE;
+        Boolean CONTINUE = Boolean.FALSE;
         ScriptResponse scriptResponse;
 
-        ScriptRunner(ScriptRequest req,ScriptListener cb) {
-            runScriptReq = req;
-            requestID = req.getRequestID();
-            waitTime = req.getWaitTime();
+        ScriptRunner(ScriptContext context, ScriptListener cb) {
+            scriptContext = context;
+            requestID = context.getRequestID();
+            waitTime = context.getWaitTime();
             externalListener = cb;
             scriptResponse = new ScriptResponse();
             scriptResponse.setStatusType(StatusType.ERROR);
@@ -313,8 +309,8 @@ public enum ScriptingClient {
 
         public boolean hasExpired() {
             boolean expired = false;
-            if(startTime > 0){
-                long etime = (endTime <=0) ? System.currentTimeMillis()-startTime: endTime-startTime;
+            if (startTime > 0) {
+                long etime = (endTime <= 0) ? System.currentTimeMillis() - startTime : endTime - startTime;
                 expired = (etime > waitTime);
             }
             return expired;
@@ -325,33 +321,26 @@ public enum ScriptingClient {
             CONTINUE = Boolean.FALSE;
             try {
 
-                if(externalListener!=null && !externalListener.beforeScriptRun(runScriptReq)) {
-                    
+                if (externalListener != null && !externalListener.beforeScriptRun(scriptContext)) {
+
                     scriptResponse.setRequestId(requestID);
                     scriptResponse.setStatusType(StatusType.SCRIPTING_RUNSCRIPT_STOPPED_INFO);
-                }else {
-                   // RunScriptRequest runScriptRequest = runScriptReq.createRunScriptRequest();
+                } else {
+                    // RunScriptRequest runScriptRequest = runScriptReq.createRunScriptRequest();
                     // synchronous call to the scripting service
                     startTime = System.currentTimeMillis();
-                    
-                    ScriptEngine engine = new ScriptEngine(runScriptReq.getScriptName());
-                    Map<String,Object> globalVars = new HashMap<>();
-                    globalVars.put("userName","WOWOWOWOW");
-                    engine.eval(globalVars);
+                    ;
 
-                    //  runScriptRequest.setStartTime(startTime);
-                  //  RunScriptResponse result = ScriptingManagerBean.getInstance().handleRequest(runScriptRequest);
-                  //  runScriptResponse   = new ScriptResponse(result);
-                    scriptResponse.setResponse(engine.getResponse());
+                    scriptResponse.setResponse(scriptContext.execute());
                     CONTINUE = Boolean.TRUE;
                     scriptResponse.setStatusType(StatusType.COMPLETED);
                 }
 
-            }catch (Exception ex) {
-                logger.log(Level.FINE,ex.getMessage(),ex);
-            }finally {
-                endTime = System.currentTimeMillis()-startTime;
-                if(!CONTINUE.booleanValue()){
+            } catch (Exception ex) {
+                logger.log(Level.FINE, ex.getMessage(), ex);
+            } finally {
+                endTime = System.currentTimeMillis() - startTime;
+                if (!CONTINUE.booleanValue()) {
                     scriptResponse = new ScriptResponse();
                     scriptResponse.setRequestId(requestID);
                     scriptResponse.setStatusType(StatusType.SCRIPTING_INTERNAL_ERROR_RUN);
@@ -359,10 +348,10 @@ public enum ScriptingClient {
             }
 
             try {
-                if(externalListener!=null)
-                    externalListener.afterScriptRun(runScriptReq,scriptResponse);
+                if (externalListener != null)
+                    externalListener.afterScriptRun(scriptContext, scriptResponse);
             } catch (Exception e) {
-                logger.log(Level.SEVERE,"exception calling onComplete: "+runScriptReq.getScriptName()+", reason: "+e.getMessage());
+                logger.log(Level.SEVERE, "exception calling onComplete: " + scriptContext.getScriptName() + ", reason: " + e.getMessage());
             }
 
             //return CONTINUE;
@@ -372,8 +361,7 @@ public enum ScriptingClient {
 
 }
 
-class WorkerThreadFactory implements ThreadFactory
-{
+class WorkerThreadFactory implements ThreadFactory {
     private static final AtomicInteger poolNumber = new AtomicInteger(1);
     private final ThreadGroup group;
     private final AtomicInteger threadNumber = new AtomicInteger(1);

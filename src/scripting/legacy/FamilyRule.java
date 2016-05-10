@@ -1,32 +1,36 @@
-package scripting;
+package scripting.legacy;
 
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import scripting.cli.CommandProperty;
+import scripting.cli.MorePrompt;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.*;
 
-public class FamilyRule
-{
+@XmlRootElement(name = "family")
+public class FamilyRule {
+
     private String value;
     private String shellPrompt;
     private String loginPrompt;
     private String passwordPrompt;
+
     private Set<MorePrompt> morePrompts;
-        
+
     private Map<String, CommandProperty> commandProperties;
-    private VendorRules parent;
+
+    private List<CommandProperty> myProps;
+
     private String saveConfigCommand;
 
-    public FamilyRule()
-    {
-        commandProperties = new LinkedHashMap<String, CommandProperty> ();
+    public FamilyRule() {
+        commandProperties = new LinkedHashMap<String, CommandProperty>();
     }
 
-    public void addCommandProperty( CommandProperty  commandProperty ) {
-        if (commandProperty.getCommand() != null)
-        {
+    public void addCommandProperty(CommandProperty commandProperty) {
+        if (commandProperty.getCommand() != null) {
             commandProperties.put(commandProperty.getCommand(), commandProperty);
         }
     }
@@ -34,71 +38,59 @@ public class FamilyRule
     /**
      * @return Returns the value.
      */
-    public String getValue()
-    {
+    @XmlAttribute(name = "value")
+    public String getValue() {
         return (this.value);
     }
 
     /**
      * @param value The value to set.
      */
-    public void setValue(String value)
-    {
+    public void setValue(String value) {
         this.value = value;
     }
 
-    /**
-     * @return Returns the vendorRules.
-     */
-    public VendorRules getParent()
-    {
-        return (this.parent);
+    @XmlElement(name = "morePrompt")
+    public Set<MorePrompt> getMorePrompts() {
+        return morePrompts;
     }
 
-    /**
-     * @param vendorRules The vendorRules to set.
-     */
-    public void setParent(VendorRules vendorRules)
-    {
-        this.parent = vendorRules;
+    public void setMorePrompts(Set<MorePrompt> morePrompts) {
+        this.morePrompts = morePrompts;
     }
 
-    /**
-     * @return Returns the commandProperties.
-     */
-    public Map<String, CommandProperty> getCommandProperties()
-    {
-        return (this.commandProperties);
+    @XmlElement(name = "CommandProperty")
+    public List<CommandProperty> getMyProps() {
+        return myProps;
     }
 
+    public void setMyProps(List<CommandProperty> props) {
+        this.myProps = props;
+    }
 
-    public CommandProperty getCommandProperty(String command)
-    {
+    public CommandProperty getCommandPropertyTest(String command) {
         CommandProperty prop = null;
-        for (Map.Entry<String, CommandProperty> item : commandProperties.entrySet())
-        {
-            if (command.matches(item.getKey()))
-            {
-                prop =  (item.getValue());
+        for (Map.Entry<String, CommandProperty> item : commandProperties.entrySet()) {
+            if (command.matches(item.getKey())) {
+                prop = (item.getValue());
                 break;
             }
         }
         return (prop);
     }
 
+
     /**
      * @return Returns the saveConfigCommand.
      */
-    public String getSaveConfigCommand()
-    {
+    public String getSaveConfigCommand() {
         return (this.saveConfigCommand);
     }
 
     /**
      * @param saveConfigCommand The saveConfigCommand to set.
      */
-    public void setSaveConfigCommand(String saveConfigCommand)
-    {
+    public void setSaveConfigCommand(String saveConfigCommand) {
         this.saveConfigCommand = saveConfigCommand;
     }
 
@@ -126,27 +118,15 @@ public class FamilyRule
         this.passwordPrompt = passwordPrompt;
     }
 
-    public void addMorePrompts(MorePrompt prompt)
-    {
-        if (prompt != null)
-        {
-            if (morePrompts == null)
-            {
+    public void addMorePrompts(MorePrompt prompt) {
+        if (prompt != null) {
+            if (morePrompts == null) {
                 morePrompts = new HashSet<MorePrompt>();
             }
             morePrompts.add(prompt);
         }
     }
 
-    /**
-     * @return Returns the defaultPrompts.
-     */
-    public Set<MorePrompt> getMorePrompts()
-    {
-        return (this.morePrompts);
-    }
-    
-    
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Name: ");
@@ -166,14 +146,22 @@ public class FamilyRule
         builder.append("\n");
 
         builder.append("MorePrompt(s):");
-        for(MorePrompt morePrompt: morePrompts){
-            builder.append("\n\tPrompt: ");
-            builder.append(morePrompt.getPrompt());
-            builder.append(" response: ");
-            builder.append(morePrompt.getResponse());
-            builder.append("\n");    
-        }
-        
+        if (morePrompts != null)
+            for (MorePrompt morePrompt : morePrompts) {
+                builder.append("\n\tPrompt: ");
+                builder.append(morePrompt.getPrompt());
+                builder.append(" response: ");
+                builder.append(morePrompt.getResponse());
+                builder.append("\n");
+            }
+
+        builder.append("Command Prompt(s):");
+        if (myProps != null)
+            for (CommandProperty morePrompt : myProps) {
+                builder.append("\t" + morePrompt.toString());
+            }
+
+
         return builder.toString();
     }
 }

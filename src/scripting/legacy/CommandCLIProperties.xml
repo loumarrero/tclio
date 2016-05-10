@@ -28,7 +28,7 @@ in second option you can specify other command properties (like timeout in this 
 4. All timeout settings are in seconds (mot in millsecs).
 
 -->
-<commandRules>
+<vendors>
   <vendor name="extreme">
    <family value=".*">
      <shellPrompt>[\\S\\s]*[.]\\d+[ ][#>][ ]$</shellPrompt>
@@ -221,4 +221,4 @@ in second option you can specify other command properties (like timeout in this 
             </CommandProperty>
         </family>
     </vendor>
- </commandRules>
+ </vendors>

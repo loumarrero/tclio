@@ -1,7 +1,9 @@
 package scripting.commands;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
+import scripting.Script;
+import scripting.ScriptEngine;
+import tcl.lang.*;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -9,50 +11,35 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import scripting.Script;
-import scripting.ScriptEngine;
-import tcl.lang.*;
-
 /**
  * Common functionality for all tcl command implementations.
- *
  */
-public class BaseTclCommand implements Command
-{
-    private static final String RIDGELINE_DEVICECOMM_SCALE_MAX_CLI_OUT_CHARACTERS = "ridgeline.devicecomm.scale.maxCliOutCharacters";
-
+public class BaseTclCommand implements Command {
     public final static String ERROR_PATTERN_STR = "Downloading to MSM-AError:|Failed to download image - Error:"
             + "|^Error:|Incomplete|%% Unrecognized command:|^-Error:|syntax error"
             + "|^ERROR:|^Invalid|Invalid (.*) detected|Invalid input detected|tftpPeerSet failed|Incomplete"
             + "|BootROM is not able to load this type of image|Error: Source image bad|a save or download is in progress - please try again later to save config:"
             + "|Failed to save config: a save or download is in progress - please try again later"
             + "|Error: Failed to install image";
-
     public final static Pattern ERROR_PATTERN = Pattern.compile(
             ERROR_PATTERN_STR, Pattern.CASE_INSENSITIVE
                     | Pattern.MULTILINE);
-
     public final static Pattern ERROR_PATTERN_XOS = Pattern
             .compile(
                     "Downloading to MSM-AError:|Failed to download image - Error:|^Error:|Incomplete|^-Error:|Error: Failed to install image",
                     Pattern.CASE_INSENSITIVE
                             | Pattern.MULTILINE);
-
-    public static final String CLI_TIMEOUT_PROPERTY_NAME =  "scripting.cli.timeoutSeconds";
-
+    public static final String CLI_TIMEOUT_PROPERTY_NAME = "scripting.cli.timeoutSeconds";
     public static final int CLI_TIMEOUT_DEFAULT = 120;
-
+    private static final String RIDGELINE_DEVICECOMM_SCALE_MAX_CLI_OUT_CHARACTERS = "ridgeline.devicecomm.scale.maxCliOutCharacters";
     private static final Logger Log = Logger
             .getLogger(BaseTclCommand.class.getName());
-
-    public final String lineSeperator = System.getProperty("line.separator");
-
     private static boolean propertiesLoaded = false;
-   // private static ServerPropertiesUtil serverProps;
-
+    public final String lineSeperator = System.getProperty("line.separator");
+    // private static ServerPropertiesUtil serverProps;
     protected ScriptEngine engine;
 
- //   protected CommandProperty commandProperty;
+    //   protected CommandProperty commandProperty;
 
     private long commandTimeoutMillis = CLI_TIMEOUT_DEFAULT * 1000;
 
@@ -62,35 +49,35 @@ public class BaseTclCommand implements Command
 
     private String shellPrompt;
 
-   // private Set<ResponseInfo> promptsResponses;
+    // private Set<ResponseInfo> promptsResponses;
 
-    private Interp interp;
+    protected Interp interp;
 
     private String command;
 
 
     private int maxCliOut = 10000;
-    
+
     private Object scriptRequest;
 
+    public BaseTclCommand() {
+
+    }
+
     /**
-     *
-     * @param context
-     *            request context for this command.
-     * @param writer
-     *            to output response / error messages during execution.
+     * @param context request context for this command.
+     * @param writer  to output response / error messages during execution.
      */
-    public BaseTclCommand(ScriptEngine engine)
-    {
+    public BaseTclCommand(ScriptEngine engine) {
         this.engine = engine;
 
         //If we loaded the properties, stop asking for them over and over again
-        if (!propertiesLoaded){
-           // serverProps = new ServerPropertiesUtil(LookupConstants.DEVICE_COMMUNICATOR_MANAGER);
+        if (!propertiesLoaded) {
+            // serverProps = new ServerPropertiesUtil(LookupConstants.DEVICE_COMMUNICATOR_MANAGER);
             Set<String> names = new HashSet<String>();
             names.add(CLI_TIMEOUT_PROPERTY_NAME);
             names.add(RIDGELINE_DEVICECOMM_SCALE_MAX_CLI_OUT_CHARACTERS);
-           // serverProps.load(names);
+            // serverProps.load(names);
 
         }
 
@@ -98,6 +85,9 @@ public class BaseTclCommand implements Command
 //        this.commandTimeoutMillis = serverProps.getInteger(CLI_TIMEOUT_PROPERTY_NAME,CLI_TIMEOUT_DEFAULT) * 1000;
     }
 
+    public void close() {
+
+    }
 
     /**
      * An Exception should be shown to STOP script execution.
@@ -105,28 +95,24 @@ public class BaseTclCommand implements Command
      * @see tcl.lang.Command#cmdProc(tcl.lang.Interp, tcl.lang.TclObject[])
      */
     @Override
-    public void cmdProc(Interp interp, TclObject[] args) throws TclException
-    {
+    public void cmdProc(Interp interp, TclObject[] args) throws TclException {
         this.interp = interp;
 //        if (ContextUtil.isStopped(context))
 //        {
 //            // stop requested
 //            return;
 //        }
-        if (args.length < 1)
-        {
+        if (args.length < 1) {
             throw new TclNumArgsException(interp, 1, args, "command missing");
         }
         cmdArgs = cmdarrayToString(args, " ", 1);
         command = cmdarrayToString(args, " ", 0);
         errorPattern = ERROR_PATTERN;
-       
-            if (Log.isLoggable(Level.FINE)) Log.log(Level.FINE,"timeout for cli [" + cmdarrayToString(args, " ", 0)
-                    + "] " + getCommandTimeoutMillis() / 1000 + " seconds.");
+
+        if (Log.isLoggable(Level.FINE)) Log.log(Level.FINE, "timeout for cli [" + cmdarrayToString(args, " ", 0)
+                + "] " + getCommandTimeoutMillis() / 1000 + " seconds.");
 
     }
-
-    
 
 
     /**
@@ -134,19 +120,15 @@ public class BaseTclCommand implements Command
      *
      * @param a
      * @param separator
-     * @param beginIndex
-     *            from this index all subsequent args are taken.
+     * @param beginIndex from this index all subsequent args are taken.
      * @return
      */
     protected String cmdarrayToString(TclObject[] a, String separator,
-                                      int beginIndex)
-    {
+                                      int beginIndex) {
         StringBuffer result = new StringBuffer();
-        if (a.length > beginIndex)
-        {
+        if (a.length > beginIndex) {
             result.append(a[beginIndex].toString());
-            for (int i = beginIndex + 1; i < a.length; i++)
-            {
+            for (int i = beginIndex + 1; i < a.length; i++) {
                 result.append(separator);
                 result.append(a[i].toString());
             }
@@ -166,17 +148,14 @@ public class BaseTclCommand implements Command
      * @see {@link #isResponseInError(String, Pattern)}
      */
     protected void setStatus(Interp interp, String response,
-                             Pattern errorPattern) throws TclException
-    {
+                             Pattern errorPattern) throws TclException {
         if (response != null
-                && getResponseErrorIndex(response, errorPattern) > 0)
-        {
+                && getResponseErrorIndex(response, errorPattern) > 0) {
             interp.setVar(Script.SYSTEM_VARIABLES.STATUS.toString(), null, -1, 0);
 
             if (Integer.valueOf(interp.getVar(
                     Script.SYSTEM_VARIABLES.ABORT_ON_ERROR.toString(), 0)
-                    .toString()) == 1)
-            {
+                    .toString()) == 1) {
 //                try
 //                {
 //                    writer
@@ -194,9 +173,7 @@ public class BaseTclCommand implements Command
             }
             // send async erros as alarm
             sendErrorAsAlarmEvent(response);
-        }
-        else
-        {
+        } else {
             interp.setVar(Script.SYSTEM_VARIABLES.STATUS.toString(), null, 0, 0);
         }
     }
@@ -209,45 +186,39 @@ public class BaseTclCommand implements Command
      * @param pErrorPattern
      * @return
      */
-    protected int getResponseErrorIndex(String response, Pattern pErrorPattern)
-    {
+    protected int getResponseErrorIndex(String response, Pattern pErrorPattern) {
         int ret = -1;
         Matcher matcher = pErrorPattern.matcher(response);
-        if (matcher.find())
-        {
+        if (matcher.find()) {
             ret = response.indexOf(command) + command.length();
         }
         return (ret);
 
     }
-    
+
 
     /**
      * @return Returns the deviceCommand.
      */
-    public String getCommandArgs()
-    {
+    public String getCommandArgs() {
         return (this.cmdArgs);
     }
 
 
-    protected void logAndSetInterpResponse(String response) throws TclException
-    {
+    protected void logAndSetInterpResponse(String response) throws TclException {
         logAndSetInterpResponse(true, response);
     }
 
 
-    protected void logAndSetInterpResponse(String header, String response) throws TclException
-    {
-        if (header != null)
-        {
+    protected void logAndSetInterpResponse(String header, String response) throws TclException {
+        if (header != null) {
             logMessage(header + lineSeperator);
         }
 
-        Integer maxCliOut = getMaxCliOut();;
+        Integer maxCliOut = getMaxCliOut();
+        ;
         String truncatedResponse = response;
-        if (response != null && response.length() > maxCliOut)
-        {
+        if (response != null && response.length() > maxCliOut) {
             StringBuilder str = new StringBuilder(response.substring(0,
                     maxCliOut));
             str.append("\n **** command response too big. truncated to ")
@@ -261,8 +232,7 @@ public class BaseTclCommand implements Command
 
 
     protected void setCommandResponse(String commandResponse)
-            throws TclException
-    {
+            throws TclException {
         interp.setVar(Script.SYSTEM_VARIABLES.CLIOUT.getDisplayString(), null,
                 commandResponse, 0);
         interp.setResult(commandResponse);
@@ -270,9 +240,8 @@ public class BaseTclCommand implements Command
     }
 
 
-    protected void logMessage(String message) throws TclException
-    {
-        engine.append(message + lineSeperator);
+    protected void logMessage(String message) throws TclException {
+        engine.appendResponse(message + lineSeperator);
     }
 
 
@@ -284,27 +253,23 @@ public class BaseTclCommand implements Command
      * @throws TclException
      */
     protected void logAndSetInterpResponse(boolean printCommand, String response)
-            throws TclException
-    {
+            throws TclException {
         String header = null;
-        if (printCommand)
-        {
+        if (printCommand) {
             header = getCommandArgs();
         }
         logAndSetInterpResponse(header, response);
     }
 
 
-    protected void resetStatusFlags() throws TclException
-    {
+    protected void resetStatusFlags() throws TclException {
         interp.setVar(Script.SYSTEM_VARIABLES.CLIOUT.getDisplayString(), null, "", 0);
         interp.setVar(Script.SYSTEM_VARIABLES.STATUS.toString(), null, 0, 0); // 0 : no
         // error
     }
 
 
-    protected void handleException(Exception ex) throws TclException
-    {
+    protected void handleException(Exception ex) throws TclException {
         String errorMsg = getDetailedErrorMessage(ex);
         sendErrorAsAlarmEvent(errorMsg);
         throw new TclException(interp, errorMsg);
@@ -314,8 +279,7 @@ public class BaseTclCommand implements Command
     /**
      * @return Returns the errorPattern.
      */
-    public Pattern getErrorPattern()
-    {
+    public Pattern getErrorPattern() {
         return (this.errorPattern);
     }
 
@@ -323,8 +287,7 @@ public class BaseTclCommand implements Command
     /**
      * @return Returns the shellPrompt.
      */
-    public String getShellPrompt()
-    {
+    public String getShellPrompt() {
         return (this.shellPrompt);
     }
 
@@ -336,24 +299,18 @@ public class BaseTclCommand implements Command
 //    {
 //        return (this.promptsResponses);
 //    }
-
-
-    protected String getDetailedErrorMessage(Exception ex)
-    {
+    protected String getDetailedErrorMessage(Exception ex) {
         String errorStr = null;
-        if (ex != null)
-        {
+        if (ex != null) {
             errorStr = ex.getMessage();
 
-            if (!(ex instanceof TclException))
-            {
-                if (ex.getMessage() != null && ex.getMessage().indexOf("Telnet connection problem") != -1)
-                {
-                    if (Log.isLoggable(Level.FINE)) Log.log(Level.FINE,"Error excecuting command: " + getCommand() + ex.getMessage());
-                }
-                else
-                {
-                    if (Log.isLoggable(Level.FINE)) Log.log(Level.FINE,"Error excecuting command: " + getCommand(), ex);
+            if (!(ex instanceof TclException)) {
+                if (ex.getMessage() != null && ex.getMessage().indexOf("Telnet connection problem") != -1) {
+                    if (Log.isLoggable(Level.FINE))
+                        Log.log(Level.FINE, "Error excecuting command: " + getCommand() + ex.getMessage());
+                } else {
+                    if (Log.isLoggable(Level.FINE))
+                        Log.log(Level.FINE, "Error excecuting command: " + getCommand(), ex);
                 }
             }
 
@@ -365,8 +322,8 @@ public class BaseTclCommand implements Command
             // StringWriter sw = new StringWriter();
             // PrintWriter pw = new PrintWriter(sw);
             // ex.printStackTrace(pw);
-            // tempBuffer.append(sw.toString());
-            // tempBuffer.append("\n").append(" ----------------------------");
+            // tempBuffer.appendResponse(sw.toString());
+            // tempBuffer.appendResponse("\n").appendResponse(" ----------------------------");
             //
             // errorStr = tempBuffer.toString();
             // }
@@ -380,19 +337,15 @@ public class BaseTclCommand implements Command
      *
      * @param errorMessage
      */
-    protected void sendErrorAsAlarmEvent(String errorMessage)
-    {
+    protected void sendErrorAsAlarmEvent(String errorMessage) {
 // We dont have a way to raise alarms from scripting yet.
     }
 
 
- 
-
     /**
      * @return Returns the command.
      */
-    public String getCommand()
-    {
+    public String getCommand() {
         return (this.command);
     }
 
@@ -400,25 +353,37 @@ public class BaseTclCommand implements Command
     /**
      * @return
      */
-    private int getMaxCliOut()
-    {
+    private int getMaxCliOut() {
         return this.maxCliOut;
     }
 
     /**
      * @return Returns the commandTimeoutMillis.
      */
-    protected long getCommandTimeoutMillis()
-    {
-        return(commandTimeoutMillis);
+    protected long getCommandTimeoutMillis() {
+        return (commandTimeoutMillis);
     }
 
 
     /**
      * @param commandTimeoutMillis The commandTimeoutMillis to set.
      */
-    protected void setCommandTimeoutMillis(long commandTimeoutMillis)
-    {
+    protected void setCommandTimeoutMillis(long commandTimeoutMillis) {
         this.commandTimeoutMillis = commandTimeoutMillis;
     }
+
+    protected String getInterVar(String name,String defaultStr){
+        String value = defaultStr;
+        try {
+            TclObject tclObject = interp.getVar(name, TCL.GLOBAL_ONLY );
+            if(tclObject != null){
+                value = tclObject.toString();
+            }
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        System.out.println(name +" : "+value);
+        return value;
+    }
+
 }

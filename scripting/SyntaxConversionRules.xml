@@ -3,7 +3,7 @@
   Rules for converting commands into tcl commands.
 -->
 
-<ConversionRule>
+<SourceMappings>
    <SourceMapping id="1">
      <xossyntaxexpr>(.*)\$CLI.OUT(.*)</xossyntaxexpr>
      <tclexpr>$1\${CLI.OUT}$2</tclexpr>
@@ -19,7 +19,7 @@
      <hint>continue</hint>
    </SourceMapping>
 
-<!--  convet ${foo) to ${foo} -->
+<!--  convert $(foo) to ${foo} -->
    <SourceMapping id="7">
      <xossyntaxexpr>(.*)\$\((.*?)\)(.*)</xossyntaxexpr>
      <tclexpr>$1\${$2}$3</tclexpr>
@@ -326,4 +326,4 @@ Interp instance.
   -->
 
 
-</ConversionRule>
+</SourceMappings>

@@ -1,4 +1,4 @@
-package scripting;
+package scripting.cli;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -6,67 +6,51 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by lmarrero on 5/5/2016.
- */
-public enum  CLIManager {
+
+public enum CLIManager {
     INSTANCE;
-    
-    public static final String DEFAULT_VENDOR = "*";
-    public static final String DEFAULT_FAMILY = "*";
-    
-    Map<String,SessionEntry> sessionMap;
-    Map<String, VendorRules> vendorRulesMap;
 
-    CLIManager(){
+    Map<String, SessionEntry> sessionMap;
+
+    CLIManager() {
         sessionMap = new ConcurrentHashMap<>();
-        try {
-            vendorRulesMap =  VendorRules.loadRules();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
-    
-    public String cli(String host, String cmd){
+
+    public static void main(String[] args) {
+        String host = "";
+        int port = 0;
+        boolean isSSH = false;
+
+    }
+
+    public String cli(String host, String cmd) {
         return null;
     }
 
-    public String cli(String host,String cmd, CLISession.QuestionPrompt questionPrompt){
+    public String cli(String host, String cmd, CLISession.QuestionPrompt questionPrompt) {
         return null;
     }
 
-    public String cli(String host,String cmd, List<CLISession.QuestionPrompt> qprompts){
+    public String cli(String host, String cmd, List<CLISession.QuestionPrompt> qprompts) {
         return null;
     }
-    
-    protected FamilyRule findRule(String vendor,String devFamOrType){
-        VendorRules rules = vendorRulesMap.get(vendor.toUpperCase());
-        if(rules==null){
-            rules = vendorRulesMap.get(DEFAULT_VENDOR);
-        }
-        FamilyRule rule = rules.getFamilyRule(devFamOrType);
-        if(rule == null){
-            rules.getFamilyRule(DEFAULT_FAMILY);
-        }
-        return rule;
-    }
-    
-    protected Map<String,String> getCLICreds() {
+
+    protected Map<String, String> getCLICreds() {
         String login = "";
         String password = "";
         boolean isSSH = false;
-        
+        return null;
     }
-    
-    protected void getDeviceProps(){
+
+    protected void getDeviceProps() {
         // BELOW is all the properties that used to get sent as Context.REQUIRED_PROPS_KEY
         // in addition to the response file stuff (see PopulateCommPropertiesTask)
-        
-        // all interpretScriptRequest.getDeviceProperties()  
-        // and then append the following:
-        
+
+        // all interpretScriptRequest.getDeviceProperties()
+        // and then appendResponse the following:
+
         // TODO: what is the difference between RunData and DeviceProperties in InterpretScriptRequest
-        
+
 //        credential.put(DEVICE_LOGIN_PROPERTY.CLI_LOGIN.getPropertyName(),
 //                authCred.getUserName()!=null?authCred.getUserName():"");//can be null, return empty string
 //        credential.put(DEVICE_LOGIN_PROPERTY.CLI_PASSWD.getPropertyName(),
@@ -83,7 +67,8 @@ public enum  CLIManager {
         String hostName = serverIp;
         try {
             hostName = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {}
+        } catch (UnknownHostException e) {
+        }
 
 
 //        allProperties.put(SERVER_PROPERTY.IP_ADDRESS.getPropertyName(), serverIp);
@@ -96,7 +81,7 @@ public enum  CLIManager {
 //        port = Integer.getInteger(ServerPropertyConstants.DEVICE_SSH_PORT, 22);;
 //        allProperties.put(SERVER_PROPERTY.SSH_PORT.getPropertyName(), port);
     }
-    
+
     protected void getCreds() {
 //        if (device != null){
 //            //sysOid = device.getSysObjectId();
@@ -146,25 +131,11 @@ public enum  CLIManager {
 //            }
 //        }
     }
-    
+
     static class SessionEntry {
         String host;
         CLISession session;
         // cli profile (ssh/telnet,port,cli prompts,...)
     }
-    
-    public static void main(String[] args){
-        String host = "";
-        int port = 0;
-        boolean isSSH = false;
-        
-        
-        CLIManager mgr = CLIManager.INSTANCE;
-        FamilyRule rule = mgr.findRule("extreme",DEFAULT_FAMILY);
-        if(rule !=null){
-            System.out.println("Found: Vendor  = "+rule.getParent().getName());
-            System.out.println(rule);
-        }
-    }
-    
+
 }

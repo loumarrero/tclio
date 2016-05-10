@@ -1,10 +1,8 @@
 package scripting;
 
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -15,8 +13,8 @@ import java.util.Map;
  * @see ScriptingClient
  */
 public class ScriptResponse {
-    private int               requestId;
-    private StatusType        statusType;
+    private int requestId;
+    private StatusType statusType;
     private String response;
 
     /**
@@ -24,10 +22,11 @@ public class ScriptResponse {
      * The purpose is to support error handling when no  {@code RunScriptResponse} is returned. In this
      * case only an error code and error message is set.
      */
-    public ScriptResponse(){}
-    
+    public ScriptResponse() {
+    }
 
-    public boolean isSuccessful(){
+
+    public boolean isSuccessful() {
         return true;
     }
 
@@ -35,7 +34,7 @@ public class ScriptResponse {
         return Collections.EMPTY_LIST;
     }
 
-    public void processResponses(ScriptResponseCB cb){
+    public void processResponses(ScriptResponseCB cb) {
 //        if(runScriptResponse==null) return;
 //        Map<ManagedEntityKey,RunScriptResponseStatusMessage> responses =   runScriptResponse.getRunResponses();
 //        for(Map.Entry<ManagedEntityKey,RunScriptResponseStatusMessage> entry:responses.entrySet()){
@@ -48,31 +47,30 @@ public class ScriptResponse {
 //            }
 //        }
     }
-    
 
-    public void setRequestId(int id){
+
+    public void setRequestId(int id) {
         this.requestId = id;
     }
 
-
-    public void setStatusType(StatusType type){
-        this.statusType = type;
-    }
-
-    public void setStatusType(StatusType type,String message){
+    public void setStatusType(StatusType type, String message) {
         this.statusType = type;
     }
 
     public StatusType getStatusType() {
         return this.statusType;
     }
-    
-    public void setResponse(String response){
-        this.response = response;
+
+    public void setStatusType(StatusType type) {
+        this.statusType = type;
     }
-    
-    public String getResponse(){
+
+    public String getResponse() {
         return response;
+    }
+
+    public void setResponse(String response) {
+        this.response = response;
     }
 
 }

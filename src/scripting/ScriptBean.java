@@ -1,8 +1,16 @@
 package scripting;
 
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "script")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ScriptBean {
 
+    @XmlAttribute(name = "name")
     private String name;
     private String comments;
     private String content;
@@ -21,15 +29,20 @@ public class ScriptBean {
     private String miscXMLData;
     private String creationDate;
     private String category;
+    private String vendor;
 
-    public ScriptBean(String name){
+    public ScriptBean() {
+    }
+
+    public ScriptBean(String name) {
         this.name = name;
     }
-    
+
+
     public String getName() {
         return name;
     }
-    
+
     public String getComments() {
         return comments;
     }
@@ -164,6 +177,14 @@ public class ScriptBean {
 
     public void setMiscXMLData(String miscXMLData) {
         this.miscXMLData = miscXMLData;
+    }
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
     }
 
     public String toString() {

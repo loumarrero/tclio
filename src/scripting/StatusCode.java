@@ -12,8 +12,7 @@ public enum StatusCode {
     COMPLETED("Completed"), // may be useful in certain context
     CANCELLED("Cancelled"),
     STOPPED("Stopped"),
-    PARTIAL("Partial"),
-    ;
+    PARTIAL("Partial"),;
 
 
     private String status;
@@ -22,15 +21,8 @@ public enum StatusCode {
         this.status = status;
     }
 
-    @Override
-    public String toString() {
-        return this.status;
-    }
-
-    public static StatusCode getStatusCode(StatusType status)
-    {
-        switch (status)
-        {
+    public static StatusCode getStatusCode(StatusType status) {
+        switch (status) {
             case NO_ERROR:
                 return StatusCode.SUCCESSFUL;
 
@@ -40,5 +32,10 @@ public enum StatusCode {
             default:
                 return StatusCode.UNSUCCESSFULL;
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.status;
     }
 }

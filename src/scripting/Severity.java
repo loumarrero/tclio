@@ -1,7 +1,6 @@
 package scripting;
 
-public enum Severity implements EnumTextValue
-{
+public enum Severity implements EnumTextValue {
     INFO("Information", "Informational severity level"),
     WARNING("Warning", "Warning severity level"),
     ERROR("Alert", "Alert severity level");
@@ -10,28 +9,24 @@ public enum Severity implements EnumTextValue
     private final String verboseDisplayString;
 
 
-    Severity(String displayString, String verboseDisplayString)
-    {
+    Severity(String displayString, String verboseDisplayString) {
         this.displayString = displayString;
         this.verboseDisplayString = verboseDisplayString;
     }
 
 
     @Override
-    public String getDisplayString()
-    {
+    public String getDisplayString() {
         return displayString;
     }
 
     @Override
-    public String getVerboseDisplayString()
-    {
+    public String getVerboseDisplayString() {
         return verboseDisplayString;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getDisplayString();
     }
 

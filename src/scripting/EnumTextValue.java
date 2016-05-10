@@ -1,7 +1,6 @@
 package scripting;
 
-public interface EnumTextValue
-{
+public interface EnumTextValue {
 
     public String getDisplayString();
 

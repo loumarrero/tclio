@@ -6,14 +6,10 @@ import tcl.lang.Interp;
 import tcl.lang.TclException;
 import tcl.lang.TclObject;
 
-import java.io.BufferedWriter;
 
+public class GetATLCommand extends BaseTclCommand {
 
-public class GetATLCommand extends BaseTclCommand
-{
-
-    public GetATLCommand(ScriptEngine engine)
-    {
+    public GetATLCommand(ScriptEngine engine) {
         super(engine);
     }
 
@@ -23,11 +19,10 @@ public class GetATLCommand extends BaseTclCommand
      */
     @Override
     public void cmdProc(Interp interp, TclObject[] args) throws TclException {
-         super.cmdProc(interp, args);
-       
-         setCommandResponse("false");
-    }
+        super.cmdProc(interp, args);
 
+        setCommandResponse("false");
+    }
 
 
 }

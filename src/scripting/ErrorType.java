@@ -5,19 +5,17 @@ package scripting;
  *
  * @author ptripathi (ptripathi@extremenetworks.com)
  */
-public enum ErrorType implements EnumTextValue
-{
+public enum ErrorType implements EnumTextValue {
 
-    APPLICATION ("Application"),
-    DEVICE ("Device"),
-    PROTOCOL ("Protocol"),
+    APPLICATION("Application"),
+    DEVICE("Device"),
+    PROTOCOL("Protocol"),
     ATHENTICATION("Authentication"),
-    INPUT("Input"),
-    ;
+    INPUT("Input"),;
 
     private String displayString;
-    ErrorType(String displayString)
-    {
+
+    ErrorType(String displayString) {
         this.displayString = displayString;
     }
 
@@ -25,8 +23,7 @@ public enum ErrorType implements EnumTextValue
      * @see com.extremenetworks.epicenter.common.interfaces.EnumTextValue#getDisplayString()
      */
     @Override
-    public String getDisplayString()
-    {
+    public String getDisplayString() {
         return displayString;
     }
 
@@ -34,8 +31,7 @@ public enum ErrorType implements EnumTextValue
      * @see com.extremenetworks.epicenter.common.interfaces.EnumTextValue#getVerboseDisplayString()
      */
     @Override
-    public String getVerboseDisplayString()
-    {
+    public String getVerboseDisplayString() {
         return displayString;
     }
 }
